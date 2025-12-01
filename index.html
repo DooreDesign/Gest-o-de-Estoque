@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Door & Design - Cloud Manager</title>
+    <title>Door & Design - Cloud Manager (Final)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -11,7 +11,7 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Configuração Tailwind -->
+    <!-- Configuração Visual -->
     <script>
       tailwind.config = {
         theme: {
@@ -20,10 +20,8 @@
               primary: "#0f172a",
               brand: "#f97316",
               "brand-hover": "#ea580c",
-              surface: "#ffffff",
               background: "#f8fafc",
               success: "#10b981",
-              warning: "#f59e0b",
               error: "#ef4444",
               text: "#334155",
               "text-light": "#64748b",
@@ -45,6 +43,7 @@
         background-color: #f8fafc;
         color: #334155;
       }
+
       .fade-in {
         animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
@@ -58,6 +57,8 @@
           transform: translateY(0);
         }
       }
+
+      /* Scrollbar Personalizada */
       ::-webkit-scrollbar {
         width: 6px;
         height: 6px;
@@ -69,6 +70,8 @@
         background: #cbd5e1;
         border-radius: 3px;
       }
+
+      /* Navegação */
       .nav-link.active {
         background-color: #f1f5f9;
         color: #0f172a;
@@ -85,6 +88,7 @@
         background-color: #f97316;
         border-radius: 0 4px 4px 0;
       }
+
       .tab-btn {
         border-bottom: 2px solid transparent;
         transition: all 0.3s;
@@ -95,6 +99,8 @@
         color: #0f172a;
         font-weight: 600;
       }
+
+      /* Imagens */
       .card-img-wrapper {
         height: 180px;
         background-color: #f1f5f9;
@@ -113,6 +119,8 @@
       .inventory-card:hover .card-img {
         transform: scale(1.08);
       }
+
+      /* Toasts */
       #toast-container {
         position: fixed;
         bottom: 24px;
@@ -263,7 +271,7 @@
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-full overflow-hidden relative">
-      <!-- Mobile Header -->
+      <!-- Topbar Mobile -->
       <header
         class="md:hidden bg-white px-4 h-16 shadow-sm flex justify-between items-center z-10 sticky top-0"
       >
@@ -583,7 +591,6 @@
                 </table>
               </div>
             </div>
-            <!-- Sem botão de backup manual pois é Cloud -->
             <div
               class="bg-white p-8 rounded-2xl shadow-card border border-slate-100"
             >
@@ -783,7 +790,6 @@
       </div>
     </div>
 
-    <!-- Other Modals (Category, Receive) omitted for brevity but functionality exists via JS -->
     <div
       id="modal-category"
       class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity opacity-0"
@@ -917,17 +923,12 @@
         orderBy,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-      // --- CONFIGURAÇÃO DO FIREBASE (Manual ou Automática) ---
+      // CONFIGURAÇÃO DO FIREBASE
       let firebaseConfig;
-
-      // Verifica se está rodando no ambiente de teste automático
       if (typeof __firebase_config !== "undefined") {
         firebaseConfig = JSON.parse(__firebase_config);
       } else {
-        // -----------------------------------------------------------
-        // ÁREA DE CONFIGURAÇÃO MANUAL
-        // Cole aqui as chaves que você vai pegar no passo a passo abaixo
-        // -----------------------------------------------------------
+        // --- COLE SUAS CHAVES AQUI ---
         firebaseConfig = {
           apiKey: "AIzaSyDncL4re72Cf9A3fBH2sf_PwhHNTKPWLC0",
           authDomain: "ded-gestao-de-estoque.firebaseapp.com",
@@ -941,104 +942,73 @@
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
-
-      // Identificador do estoque (pode mudar o nome se quiser ter múltiplos estoques no mesmo banco)
       const appId =
         typeof __app_id !== "undefined" ? __app_id : "door-design-matriz";
 
-      // Estado Local (Espelho do Firestore)
-      let inventory = [];
-      let categories = [];
-      let historyLog = [];
-      let activeTab = "Todas";
-      let viewMode = localStorage.getItem("dd_view_mode") || "grid";
-      let sortMode = "name_asc";
-      let categoryChartInstance = null;
+      let inventory = [],
+        categories = [],
+        historyLog = [],
+        activeTab = "Todas";
+      let viewMode = localStorage.getItem("dd_view_mode") || "grid",
+        sortMode = "name_asc",
+        categoryChartInstance = null;
 
-      // Init
       async function initApp() {
         try {
           if (
             typeof __initial_auth_token !== "undefined" &&
             __initial_auth_token
-          ) {
+          )
             await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
+          else await signInAnonymously(auth);
 
           setupRealtimeListeners();
           document
             .getElementById("loading-screen")
             .classList.add("opacity-0", "pointer-events-none");
 
-          // Expor funções globais para o HTML
-          window.openModal = openModal;
-          window.closeModal = closeModal;
-          window.processImage = processImage;
-          window.removeImage = removeImage;
-          window.handleFormSubmit = handleFormSubmit;
-          window.deleteItem = deleteItem;
-          window.updateStockDirect = updateStockDirect;
-          window.switchView = switchView;
-          window.toggleViewMode = toggleViewMode;
-          window.changeSort = changeSort;
-          window.renderInventory = renderInventory; // Search trigger
-          window.openCategoryModal = openCategoryModal;
-          window.closeCategoryModal = closeCategoryModal;
-          window.handleCategorySubmit = handleCategorySubmit;
-          window.deleteCategory = deleteCategory;
-          window.openReceiveModal = openReceiveModal;
-          window.closeReceiveModal = closeReceiveModal;
-          window.handleReceiveSubmit = handleReceiveSubmit;
-          window.setActiveTab = setActiveTab;
-          window.prepareEdit = prepareEdit;
+          // Expose Globals
+          Object.assign(window, {
+            openModal,
+            closeModal,
+            processImage,
+            removeImage,
+            handleFormSubmit,
+            deleteItem,
+            updateStockDirect,
+            switchView,
+            toggleViewMode,
+            changeSort,
+            renderInventory,
+            openCategoryModal,
+            closeCategoryModal,
+            handleCategorySubmit,
+            deleteCategory,
+            openReceiveModal,
+            closeReceiveModal,
+            handleReceiveSubmit,
+            setActiveTab,
+            prepareEdit,
+          });
 
           switchView("dashboard");
         } catch (error) {
-          console.error("Erro auth:", error);
-          alert("Erro ao conectar no banco de dados. Recarregue a página.");
+          console.error("Auth Err", error);
         }
       }
 
-      // --- FIRESTORE LISTENERS ---
       function setupRealtimeListeners() {
-        // 1. Inventory Listener
-        const invRef = collection(
-          db,
-          "artifacts",
-          appId,
-          "public",
-          "data",
-          "inventory"
-        );
         onSnapshot(
-          invRef,
-          (snapshot) => {
-            inventory = snapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }));
+          collection(db, "artifacts", appId, "public", "data", "inventory"),
+          (snap) => {
+            inventory = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
             renderGlobalUI();
-          },
-          (err) => console.error("Erro inventory:", err)
-        );
-
-        // 2. Categories Listener
-        const catRef = collection(
-          db,
-          "artifacts",
-          appId,
-          "public",
-          "data",
-          "categories"
+          }
         );
         onSnapshot(
-          catRef,
-          (snapshot) => {
-            // Mapear documentos para array de strings (nomes das categorias)
-            // Se estiver vazio, usa padrão
-            const docs = snapshot.docs.map((doc) => doc.data().name);
+          collection(db, "artifacts", appId, "public", "data", "categories"),
+          (snap) => {
+            const docs = snap.docs.map((doc) => doc.data().name);
             categories =
               docs.length > 0
                 ? docs
@@ -1046,35 +1016,19 @@
             renderCategoryTabs();
             renderCategoryTable();
             updateGlobalCharts();
-          },
-          (err) => console.error("Erro categorias:", err)
-        );
-
-        // 3. History Listener
-        const histRef = collection(
-          db,
-          "artifacts",
-          appId,
-          "public",
-          "data",
-          "history"
+          }
         );
         onSnapshot(
-          histRef,
-          (snapshot) => {
-            historyLog = snapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }));
-            // Sort client-side desc
-            historyLog.sort((a, b) => new Date(b.date) - new Date(a.date));
+          collection(db, "artifacts", appId, "public", "data", "history"),
+          (snap) => {
+            historyLog = snap.docs
+              .map((doc) => ({ id: doc.id, ...doc.data() }))
+              .sort((a, b) => new Date(b.date) - new Date(a.date));
             renderHistory();
-          },
-          (err) => console.error("Erro history:", err)
+          }
         );
       }
 
-      // --- ACTIONS (Write to Cloud) ---
       async function logAction(itemName, action, change, details = "") {
         try {
           await addDoc(
@@ -1087,9 +1041,7 @@
               details,
             }
           );
-        } catch (e) {
-          console.error("Log error", e);
-        }
+        } catch (e) {}
       }
 
       async function handleFormSubmit(e) {
@@ -1105,7 +1057,6 @@
           image: document.getElementById("imgBase64").value || null,
           updatedAt: new Date().toISOString(),
         };
-
         try {
           if (id) {
             await updateDoc(
@@ -1125,7 +1076,7 @@
           }
           closeModal();
         } catch (err) {
-          alert("Erro ao salvar: " + err.message);
+          alert("Erro: " + err.message);
         }
       }
 
@@ -1141,19 +1092,19 @@
           logAction(item.name, change > 0 ? "Ajuste (+)" : "Retirada", change);
           showToast(`Estoque: ${newQty}`, "success");
         } catch (e) {
-          alert("Erro de conexão");
+          alert("Erro conexão");
         }
       }
 
       async function deleteItem(id) {
-        if (!confirm("Excluir item permanentemente?")) return;
+        if (!confirm("Excluir?")) return;
         const item = inventory.find((i) => i.id === id);
         try {
           await deleteDoc(
             doc(db, "artifacts", appId, "public", "data", "inventory", id)
           );
           logAction(item ? item.name : "Item", "Exclusão", 0);
-          showToast("Item excluído", "default");
+          showToast("Excluído", "default");
         } catch (e) {
           alert(e.message);
         }
@@ -1161,7 +1112,7 @@
 
       async function handleReceiveSubmit(e) {
         e.preventDefault();
-        const id = document.getElementById("receiveItemId").value; // String ID in Firestore
+        const id = document.getElementById("receiveItemId").value;
         const qty = parseInt(document.getElementById("receiveQty").value);
         const cost = document.getElementById("receiveCost").value;
         const item = inventory.find((i) => i.id === id);
@@ -1177,7 +1128,7 @@
               qty,
               cost ? `Custo: R$${cost}` : ""
             );
-            showToast("Recebido com sucesso!", "success");
+            showToast("Recebido!", "success");
             closeReceiveModal();
           } catch (err) {
             alert("Erro ao receber");
@@ -1185,50 +1136,30 @@
         }
       }
 
-      // --- Categories Logic (Cloud) ---
-      // Nota: Para simplificar, "deletar categoria" apenas remove o documento da categoria.
-      // A lógica de mover itens para 'Geral' deve ser feita lendo o inventário local e disparando updates.
       async function handleCategorySubmit(e) {
         e.preventDefault();
         const newName = document.getElementById("catNameInput").value.trim();
-        if (!newName || categories.includes(newName))
-          return alert("Nome inválido ou já existe");
-
+        if (!newName || categories.includes(newName)) return alert("Inválido");
         try {
-          // Adiciona novo doc
           await addDoc(
             collection(db, "artifacts", appId, "public", "data", "categories"),
             { name: newName }
           );
           showToast("Categoria criada", "success");
           closeCategoryModal();
-        } catch (err) {
-          alert(err.message);
-        }
+        } catch (err) {}
       }
-
       async function deleteCategory(catName) {
-        // Firestore não deleta por query facilmente.
-        // 1. Achar o ID do doc da categoria
-        // Como estamos apenas com array de nomes na memoria, precisamos achar o doc ID de alguma forma ou
-        // assumir que não podemos deletar facilmente sem mudar a estrutura de listeners.
-        // Simplificação: Avisar que não implementado na versão demo cloud ou fazer query.
-        if (!confirm(`Remover categoria "${catName}"?`)) return;
-
-        // Query para achar o doc
-        // (Na prática real, guardariamos o ID da categoria junto com o nome no array 'categories')
-        // Vamos pular a deleção complexa para manter estabilidade ou apenas simular visualmente
         alert(
-          "Para segurança dos dados, a exclusão de categorias deve ser feita pelo admin do painel Firebase nesta versão."
+          "Exclusão de categorias deve ser feita no painel admin para segurança."
         );
       }
 
-      // --- UI Rendering (Similar to v5 but uses global arrays updated by listeners) ---
       function renderGlobalUI() {
-        renderInventory(); // Grid/List
-        renderShopping(); // Shopping List
-        renderHistory(); // History Table
-        updateDashboard(); // KPI + Charts
+        renderInventory();
+        renderShopping();
+        renderHistory();
+        updateDashboard();
       }
 
       function renderInventory() {
@@ -1237,27 +1168,23 @@
           .getElementById("search-input")
           .value.toLowerCase();
         container.innerHTML = "";
-
         let filtered = inventory.filter((i) => {
-          const matchesSearch =
-            i.name.toLowerCase().includes(term) ||
-            (i.tag && i.tag.toLowerCase().includes(term)) ||
-            (i.supplier && i.supplier.toLowerCase().includes(term));
-          const matchesTab = activeTab === "Todas" || i.category === activeTab;
-          return matchesSearch && matchesTab;
+          return (
+            (i.name.toLowerCase().includes(term) ||
+              (i.tag && i.tag.toLowerCase().includes(term)) ||
+              (i.supplier && i.supplier.toLowerCase().includes(term))) &&
+            (activeTab === "Todas" || i.category === activeTab)
+          );
         });
-
-        // Client Sort
         filtered.sort((a, b) => {
           if (sortMode === "name_asc") return a.name.localeCompare(b.name);
           if (sortMode === "name_desc") return b.name.localeCompare(a.name);
           if (sortMode === "qty_asc") return a.qty - b.qty;
-          if (sortMode === "qty_desc") return b.qty - a.qty;
-          return 0;
+          return b.qty - a.qty;
         });
 
         if (filtered.length === 0) {
-          container.innerHTML = `<div class="py-12 text-center text-text-light flex flex-col items-center"><i class="fas fa-search text-4xl mb-3 text-slate-200"></i><p>Nenhum item encontrado.</p></div>`;
+          container.innerHTML = `<div class="py-12 text-center text-text-light flex flex-col items-center"><i class="fas fa-search text-4xl mb-3 text-slate-200"></i><p>Nada encontrado.</p></div>`;
           return;
         }
 
@@ -1265,23 +1192,20 @@
           let html =
             '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">';
           filtered.forEach((item) => {
-            const isCrit = item.qty < item.min;
-            const pct = Math.min(100, (item.qty / (item.min * 2)) * 100);
-            const bar = isCrit
-              ? "bg-error"
-              : item.qty === item.min
-              ? "bg-warning"
-              : "bg-success";
+            const isCrit = item.qty < item.min,
+              pct = Math.min(100, (item.qty / (item.min * 2)) * 100),
+              bar = isCrit
+                ? "bg-error"
+                : item.qty === item.min
+                ? "bg-warning"
+                : "bg-success";
             const img = item.image
               ? `<img src="${item.image}" class="card-img">`
               : `<div class="flex flex-col items-center justify-center h-full text-slate-300"><i class="fas fa-image text-3xl"></i></div>`;
-
-            html += `
-                        <div class="inventory-card bg-white rounded-2xl shadow-card border border-slate-100 hover:shadow-floating transition-all overflow-hidden flex flex-col group relative ${
-                          isCrit ? "ring-2 ring-error" : ""
-                        }">
-                            <div class="card-img-wrapper">
-                                ${img}
+            html += `<div class="inventory-card bg-white rounded-2xl shadow-card border border-slate-100 hover:shadow-floating transition-all overflow-hidden flex flex-col group relative ${
+              isCrit ? "ring-2 ring-error" : ""
+            }">
+                            <div class="card-img-wrapper">${img}
                                 <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3 backdrop-blur-[2px]">
                                      <button onclick="prepareEdit('${
                                        item.id
@@ -1299,94 +1223,63 @@
                                     : ""
                                 }
                             </div>
-                            <div class="p-5 flex-1 flex flex-col">
-                                <div class="mb-1">
-                                    <h4 class="font-bold text-slate-800 text-base leading-tight line-clamp-2" title="${
-                                      item.name
-                                    }">${item.name}</h4>
-                                    <p class="text-xs text-slate-400 truncate"><i class="fas fa-truck mr-1"></i>${
-                                      item.supplier || "N/A"
-                                    }</p>
-                                </div>
-                                <div class="flex flex-wrap items-center gap-2 mb-4 mt-2">
-                                    ${
-                                      item.tag
-                                        ? `<span class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-md font-bold">#${item.tag}</span>`
-                                        : ""
-                                    }
-                                </div>
-                                <div class="mt-auto">
-                                    <div class="flex justify-between items-end mb-1 text-sm"><span class="text-slate-500 text-xs font-bold uppercase">Estoque</span><span class="text-slate-400 text-xs">Min: ${
-                                      item.min
-                                    }</span></div>
-                                    <div class="flex items-center justify-between mb-2">
-                                        <span class="text-2xl font-bold ${
-                                          isCrit
-                                            ? "text-error"
-                                            : "text-slate-700"
-                                        }">${item.qty}</span>
-                                        <div class="w-1/2 h-2 bg-slate-100 rounded-full overflow-hidden ml-3"><div class="h-full ${bar}" style="width: ${pct}%"></div></div>
-                                    </div>
-                                    <div class="flex gap-2 mt-3">
-                                        <button onclick="updateStockDirect('${
-                                          item.id
-                                        }', -1)" class="flex-1 h-9 flex items-center justify-center border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500 transition"><i class="fas fa-minus"></i></button>
-                                        <button onclick="updateStockDirect('${
-                                          item.id
-                                        }', 1)" class="flex-1 h-9 flex items-center justify-center bg-primary text-white rounded-lg hover:bg-slate-800 shadow-md transition"><i class="fas fa-plus"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
+                            <div class="p-5 flex-1 flex flex-col"><div class="mb-1"><h4 class="font-bold text-slate-800 text-base leading-tight line-clamp-2" title="${
+                              item.name
+                            }">${
+              item.name
+            }</h4><p class="text-xs text-slate-400 truncate"><i class="fas fa-truck mr-1"></i>${
+              item.supplier || "N/A"
+            }</p></div>
+                                <div class="flex flex-wrap items-center gap-2 mb-4 mt-2">${
+                                  item.tag
+                                    ? `<span class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-md font-bold">#${item.tag}</span>`
+                                    : ""
+                                }</div>
+                                <div class="mt-auto"><div class="flex justify-between items-end mb-1 text-sm"><span class="text-slate-500 text-xs font-bold uppercase">Estoque</span><span class="text-slate-400 text-xs">Min: ${
+                                  item.min
+                                }</span></div>
+                                    <div class="flex items-center justify-between mb-2"><span class="text-2xl font-bold ${
+                                      isCrit ? "text-error" : "text-slate-700"
+                                    }">${
+              item.qty
+            }</span><div class="w-1/2 h-2 bg-slate-100 rounded-full overflow-hidden ml-3"><div class="h-full ${bar}" style="width: ${pct}%"></div></div></div>
+                                    <div class="flex gap-2 mt-3"><button onclick="updateStockDirect('${
+                                      item.id
+                                    }', -1)" class="flex-1 h-9 flex items-center justify-center border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500 transition"><i class="fas fa-minus"></i></button><button onclick="updateStockDirect('${
+              item.id
+            }', 1)" class="flex-1 h-9 flex items-center justify-center bg-primary text-white rounded-lg hover:bg-slate-800 shadow-md transition"><i class="fas fa-plus"></i></button></div>
+                                </div></div></div>`;
           });
           container.innerHTML = html + "</div>";
         } else {
-          // List View
           let html = `<div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden"><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-text-light font-bold text-xs uppercase"><tr><th class="p-4 w-12"></th><th class="p-4">Item</th><th class="p-4 hidden md:table-cell">Categoria</th><th class="p-4 text-center">Status</th><th class="p-4 text-right">Ações</th></tr></thead><tbody class="divide-y divide-slate-50">`;
           filtered.forEach((item) => {
-            const isCrit = item.qty < item.min;
-            const img = item.image
-              ? `<img src="${item.image}" class="w-10 h-10 rounded object-cover">`
-              : `<div class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-slate-400"><i class="fas fa-box"></i></div>`;
-            html += `
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="p-4">${img}</td>
-                            <td class="p-4"><div class="font-bold text-slate-800">${
-                              item.name
-                            }</div><div class="text-xs text-slate-400 sm:hidden">${
+            const isCrit = item.qty < item.min,
+              img = item.image
+                ? `<img src="${item.image}" class="w-10 h-10 rounded object-cover">`
+                : `<div class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-slate-400"><i class="fas fa-box"></i></div>`;
+            html += `<tr class="hover:bg-slate-50 transition"><td class="p-4">${img}</td><td class="p-4"><div class="font-bold text-slate-800">${
+              item.name
+            }</div><div class="text-xs text-slate-400 sm:hidden">${
               item.category
-            }</div></td>
-                            <td class="p-4 hidden md:table-cell"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs">${
-                              item.category
-                            }</span></td>
-                            <td class="p-4 text-center">
-                                <div class="flex items-center justify-center gap-2">
-                                    <button onclick="updateStockDirect('${
-                                      item.id
-                                    }', -1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-slate-600">-</button>
-                                    <span class="font-bold w-8 text-center ${
-                                      isCrit ? "text-error" : "text-slate-700"
-                                    }">${item.qty}</span>
-                                    <button onclick="updateStockDirect('${
-                                      item.id
-                                    }', 1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-slate-600">+</button>
-                                </div>
-                            </td>
-                            <td class="p-4 text-right">
-                                <button onclick="prepareEdit('${
-                                  item.id
-                                }')" class="text-blue-600 p-2"><i class="fas fa-pen"></i></button>
-                                <button onclick="deleteItem('${
-                                  item.id
-                                }')" class="text-error p-2"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>`;
+            }</div></td><td class="p-4 hidden md:table-cell"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs">${
+              item.category
+            }</span></td><td class="p-4 text-center"><div class="flex items-center justify-center gap-2"><button onclick="updateStockDirect('${
+              item.id
+            }', -1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-slate-600">-</button><span class="font-bold w-8 text-center ${
+              isCrit ? "text-error" : "text-slate-700"
+            }">${item.qty}</span><button onclick="updateStockDirect('${
+              item.id
+            }', 1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-slate-600">+</button></div></td><td class="p-4 text-right"><button onclick="prepareEdit('${
+              item.id
+            }')" class="text-blue-600 p-2"><i class="fas fa-pen"></i></button><button onclick="deleteItem('${
+              item.id
+            }')" class="text-error p-2"><i class="fas fa-trash"></i></button></td></tr>`;
           });
           container.innerHTML = html + "</tbody></table></div>";
         }
       }
 
-      // --- Helper & Visual Functions ---
       function renderShopping() {
         const grid = document.getElementById("shopping-grid");
         const empty = document.getElementById("empty-state-shopping");
@@ -1399,25 +1292,32 @@
         empty.classList.add("hidden");
         toBuy.forEach((item) => {
           const sug = Math.ceil(item.min * 1.5) - item.qty;
-          grid.innerHTML += `
-                    <div class="bg-white p-5 rounded-xl shadow-card border border-slate-100 flex flex-col md:flex-row items-center gap-6 hover:shadow-md transition relative overflow-hidden">
+          const img = item.image
+            ? `<img src="${item.image}" class="w-full h-full object-cover">`
+            : '<i class="fas fa-shopping-basket text-xl"></i>';
+          grid.innerHTML += `<div class="bg-white p-5 rounded-xl shadow-card border border-slate-100 flex flex-col md:flex-row items-center gap-6 hover:shadow-md transition relative overflow-hidden">
                         <div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
-                        <div class="flex-1 text-center md:text-left w-full">
-                            <h4 class="font-bold text-slate-800 text-lg">${item.name}</h4>
-                            <div class="text-xs text-text-light mt-1">Atual: <span class="font-bold text-error">${item.qty}</span> / Min: ${item.min}</div>
-                        </div>
-                        <button onclick="openReceiveModal('${item.id}', ${sug})" class="bg-success text-white px-5 py-2.5 rounded-xl shadow-lg hover:bg-emerald-600 transition text-sm font-bold flex items-center gap-2"><i class="fas fa-check"></i> Receber</button>
-                    </div>`;
+                        <div class="w-16 h-16 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center shrink-0 border border-slate-100 overflow-hidden">${img}</div>
+                        <div class="flex-1 text-center md:text-left w-full"><h4 class="font-bold text-slate-800 text-lg">${
+                          item.name
+                        }</h4><div class="text-xs text-text-light mt-1">Fornecedor: ${
+            item.supplier || "-"
+          } • Atual: <span class="font-bold text-error">${
+            item.qty
+          }</span> / Mín: ${item.min}</div></div>
+                        <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end bg-slate-50 p-3 rounded-xl md:bg-transparent md:p-0"><div class="text-right px-2"><div class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Sugestão</div><div class="text-xl font-bold text-primary">+${sug}</div></div><button onclick="openReceiveModal('${
+            item.id
+          }', ${sug})" class="bg-success text-white px-5 py-2.5 rounded-xl shadow-lg hover:bg-emerald-600 transition text-sm font-bold flex items-center gap-2"><i class="fas fa-check"></i> Receber</button></div></div>`;
         });
       }
 
       function renderHistory() {
-        const tbody = document.getElementById("history-table-body");
-        const dashTable = document.getElementById("dash-recent-table");
+        const tbody = document.getElementById("history-table-body"),
+          dashTable = document.getElementById("dash-recent-table");
         const html = historyLog
           .map((log) => {
-            const d = new Date(log.date);
-            const isPos = log.change > 0;
+            const d = new Date(log.date),
+              isPos = log.change > 0;
             return `<tr class="hover:bg-slate-50"><td class="p-5 whitespace-nowrap text-slate-500 font-mono text-xs">${d.toLocaleDateString(
               "pt-BR"
             )} ${d.toLocaleTimeString("pt-BR", {
@@ -1438,7 +1338,6 @@
             }">${isPos ? "+" : ""}${log.change}</td></tr>`;
           })
           .join("");
-
         if (tbody)
           tbody.innerHTML =
             html ||
@@ -1468,31 +1367,53 @@
         document.getElementById(
           "dash-critical-count"
         ).innerText = `${critical.length} itens`;
-
         const listEl = document.getElementById("dash-critical-list");
-        if (listEl) {
+        if (listEl)
           listEl.innerHTML =
             critical.length === 0
               ? '<div class="text-center py-4 text-slate-400 text-sm">Tudo OK!</div>'
               : critical
                   .slice(0, 5)
                   .map(
-                    (i) => `
-                    <div class="flex justify-between items-center bg-red-50/50 p-3 rounded-xl border border-red-100 cursor-pointer" onclick="openReceiveModal('${
-                      i.id
-                    }', ${Math.ceil(i.min * 1.5) - i.qty})">
-                        <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-white text-error flex items-center justify-center font-bold text-xs border border-red-100">${
-                          i.qty
-                        }</div><div><p class="text-sm font-bold text-slate-700 truncate w-32">${
-                      i.name
-                    }</p><p class="text-[10px] text-slate-400">Min: ${
-                      i.min
-                    }</p></div></div><i class="fas fa-chevron-right text-xs text-red-300"></i>
-                    </div>`
+                    (i) =>
+                      `<div class="flex justify-between items-center bg-red-50/50 p-3 rounded-xl border border-red-100 cursor-pointer" onclick="openReceiveModal('${
+                        i.id
+                      }', ${
+                        Math.ceil(i.min * 1.5) - i.qty
+                      })"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-white text-error flex items-center justify-center font-bold text-xs border border-red-100">${
+                        i.qty
+                      }</div><div><p class="text-sm font-bold text-slate-700 truncate w-32">${
+                        i.name
+                      }</p><p class="text-[10px] text-slate-400">Min: ${
+                        i.min
+                      }</p></div></div><i class="fas fa-chevron-right text-xs text-red-300"></i></div>`
                   )
                   .join("");
-        }
         updateGlobalCharts();
+
+        // Calculate Top Movers
+        const outputMap = {};
+        historyLog.forEach((l) => {
+          if (l.change < 0)
+            outputMap[l.itemName] =
+              (outputMap[l.itemName] || 0) + Math.abs(l.change);
+        });
+        const topMovers = Object.entries(outputMap)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5);
+        const moveEl = document.getElementById("dash-top-movers");
+        if (moveEl)
+          moveEl.innerHTML =
+            topMovers.length === 0
+              ? '<p class="text-center text-xs text-slate-400 py-4">Sem dados</p>'
+              : topMovers
+                  .map(
+                    ([n, c], i) =>
+                      `<div class="flex justify-between py-2 border-b border-slate-50 text-sm"><span class="text-slate-600">#${
+                        i + 1
+                      } ${n}</span><span class="font-bold text-brand">${c}</span></div>`
+                  )
+                  .join("");
       }
 
       function updateGlobalCharts() {
@@ -1532,7 +1453,7 @@
         });
       }
 
-      // --- Modals & Utils (Global Scope) ---
+      // --- Modals & Utils ---
       function openModal() {
         document.getElementById("modal-form").classList.remove("hidden");
         setTimeout(() => {
@@ -1570,6 +1491,7 @@
               .classList.remove("opacity-0"),
           10
         );
+        setTimeout(() => document.getElementById("receiveQty").focus(), 100);
       }
       function closeReceiveModal() {
         document.getElementById("modal-receive").classList.add("opacity-0");
@@ -1597,7 +1519,6 @@
           200
         );
       }
-
       function prepareEdit(id) {
         const item = inventory.find((i) => i.id === id);
         if (!item) return;
@@ -1748,7 +1669,6 @@
           updateDashboard();
       }
 
-      // Start
       initApp();
     </script>
   </body>
