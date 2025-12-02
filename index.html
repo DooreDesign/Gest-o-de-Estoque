@@ -131,6 +131,13 @@
         gap: 10px;
         pointer-events: none;
       }
+      @media (max-width: 640px) {
+        #toast-container {
+          bottom: 12px;
+          right: 12px;
+          left: 12px;
+        }
+      }
       .toast {
         pointer-events: auto;
         background: white;
@@ -146,8 +153,55 @@
         transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         font-size: 14px;
       }
+      @media (max-width: 640px) {
+        .toast {
+          min-width: auto;
+          padding: 12px 16px;
+          font-size: 13px;
+        }
+      }
       .toast.show {
         transform: translateX(0);
+      }
+
+      /* Mobile Sidebar Overlay */
+      #sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 15;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+      }
+      #sidebar-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      @media (min-width: 768px) {
+        #sidebar-overlay {
+          display: none;
+        }
+      }
+
+      /* Sidebar Mobile */
+      aside {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      @media (max-width: 767px) {
+        aside {
+          position: fixed;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          transform: translateX(-100%);
+          z-index: 20;
+          width: 280px;
+          max-width: 85vw;
+        }
+        aside.mobile-open {
+          transform: translateX(0);
+        }
       }
     </style>
   </head>
@@ -168,10 +222,12 @@
     </div>
 
     <div id="toast-container"></div>
+    <div id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
     <!-- Sidebar -->
     <aside
-      class="w-full md:w-72 bg-white flex flex-col shadow-xl z-20 shrink-0 border-r border-slate-100 transition-all duration-300"
+      id="main-sidebar"
+      class="w-full md:w-72 bg-white flex flex-col shadow-xl z-20 shrink-0 border-r border-slate-100"
     >
       <div
         class="h-24 flex items-center justify-center border-b border-slate-100 bg-white relative overflow-hidden"
@@ -281,15 +337,16 @@
           >
             <i class="fas fa-layer-group text-brand text-sm"></i>
           </div>
-          <span class="font-bold text-primary tracking-tight"
+          <span
+            class="font-bold text-primary tracking-tight text-sm sm:text-base"
             >DOOR<span class="text-brand">&</span>DESIGN</span
           >
         </div>
         <button
-          onclick="document.querySelector('aside').classList.toggle('hidden')"
-          class="text-text-light p-2"
+          onclick="toggleMobileSidebar()"
+          class="text-text-light p-2 hover:bg-slate-100 rounded-lg transition"
         >
-          <i class="fas fa-bars"></i>
+          <i class="fas fa-bars text-lg"></i>
         </button>
       </header>
 
@@ -299,38 +356,49 @@
       >
         <!-- DASHBOARD -->
         <div id="view-dashboard" class="view-section space-y-6 fade-in">
-          <header class="flex justify-between items-end mb-2">
+          <header
+            class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-4"
+          >
             <div>
-              <h2 class="text-2xl font-bold text-primary">
+              <h2 class="text-xl sm:text-2xl font-bold text-primary">
                 Painel de Controle
               </h2>
-              <p class="text-text-light text-sm">
+              <p class="text-text-light text-xs sm:text-sm">
                 Dados sincronizados em tempo real
               </p>
             </div>
-            <div class="text-right hidden sm:block">
+            <div class="text-left sm:text-right">
               <p
                 class="text-xs text-slate-400 font-semibold uppercase tracking-wider"
               >
                 Itens Totais
               </p>
-              <p class="text-2xl font-bold text-primary" id="dash-total-items">
+              <p
+                class="text-xl sm:text-2xl font-bold text-primary"
+                id="dash-total-items"
+              >
                 ...
               </p>
             </div>
           </header>
 
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto">
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 h-auto"
+          >
             <!-- Critical Alert -->
             <div
-              class="bg-white p-6 rounded-2xl shadow-card border border-red-100 relative overflow-hidden flex flex-col"
+              class="bg-white p-4 sm:p-6 rounded-2xl shadow-card border border-red-100 relative overflow-hidden flex flex-col min-h-[250px]"
             >
-              <div class="flex justify-between items-center mb-4 z-10">
-                <h3 class="font-bold text-error flex items-center gap-2">
+              <div
+                class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 z-10"
+              >
+                <h3
+                  class="font-bold text-error flex items-center gap-2 text-sm sm:text-base"
+                >
                   <i class="fas fa-bell"></i> Atenção Necessária
                 </h3>
                 <span
-                  class="bg-red-50 text-error text-xs font-bold px-2 py-1 rounded-lg"
+                  class="bg-red-50 text-error text-xs font-bold px-2 py-1 rounded-lg whitespace-nowrap"
                   id="dash-critical-count"
                   >0 itens</span
                 >
@@ -355,13 +423,15 @@
 
             <!-- Chart -->
             <div
-              class="bg-white p-6 rounded-2xl shadow-card border border-slate-100 flex flex-col"
+              class="bg-white p-4 sm:p-6 rounded-2xl shadow-card border border-slate-100 flex flex-col min-h-[250px]"
             >
-              <h3 class="font-bold text-primary mb-4 flex items-center gap-2">
+              <h3
+                class="font-bold text-primary mb-4 flex items-center gap-2 text-sm sm:text-base"
+              >
                 <i class="fas fa-chart-pie text-brand"></i> Distribuição
               </h3>
               <div
-                class="flex-1 flex items-center justify-center relative min-h-[200px]"
+                class="flex-1 flex items-center justify-center relative min-h-[180px] sm:min-h-[200px]"
               >
                 <canvas id="categoryChart"></canvas>
               </div>
@@ -369,9 +439,11 @@
 
             <!-- Top Movers -->
             <div
-              class="bg-white p-6 rounded-2xl shadow-card border border-slate-100 flex flex-col"
+              class="bg-white p-4 sm:p-6 rounded-2xl shadow-card border border-slate-100 flex flex-col min-h-[250px]"
             >
-              <h3 class="font-bold text-primary mb-4 flex items-center gap-2">
+              <h3
+                class="font-bold text-primary mb-4 flex items-center gap-2 text-sm sm:text-base"
+              >
                 <i class="fas fa-fire text-warning"></i> Maior Saída (Top 5)
               </h3>
               <div
@@ -386,22 +458,22 @@
             class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden"
           >
             <div
-              class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50"
+              class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-slate-50/50"
             >
               <h3
-                class="font-bold text-slate-700 text-sm uppercase tracking-wide"
+                class="font-bold text-slate-700 text-xs sm:text-sm uppercase tracking-wide"
               >
                 Últimas Movimentações (Global)
               </h3>
               <button
                 onclick="switchView('history')"
-                class="text-xs font-bold text-brand hover:underline"
+                class="text-xs font-bold text-brand hover:underline whitespace-nowrap"
               >
                 Ver Histórico
               </button>
             </div>
             <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm">
+              <table class="w-full text-left text-sm min-w-[500px]">
                 <tbody
                   id="dash-recent-table"
                   class="divide-y divide-slate-50 text-slate-600"
@@ -414,11 +486,21 @@
         <!-- INVENTORY -->
         <div id="view-inventory" class="view-section hidden space-y-6 fade-in">
           <div
-            class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sticky top-0 bg-background/95 backdrop-blur z-20 pb-4 pt-2 border-b border-slate-200/60"
+            class="flex flex-col gap-3 sm:gap-4 sticky top-0 bg-background/95 backdrop-blur z-20 pb-3 sm:pb-4 pt-2 border-b border-slate-200/60"
           >
-            <div><h2 class="text-2xl font-bold text-primary">Estoque</h2></div>
-            <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div class="relative flex-1 md:w-64 group">
+            <div class="flex justify-between items-center">
+              <h2 class="text-xl sm:text-2xl font-bold text-primary">
+                Estoque
+              </h2>
+              <button
+                onclick="openModal()"
+                class="md:hidden bg-primary hover:bg-slate-800 text-white p-2.5 rounded-xl shadow-lg text-sm font-semibold transition"
+              >
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
+              <div class="relative flex-1 group">
                 <input
                   type="text"
                   id="search-input"
@@ -430,12 +512,12 @@
                   class="fas fa-search absolute left-4 top-3 text-slate-400 group-focus-within:text-brand transition-colors"
                 ></i>
               </div>
-              <div class="flex gap-2">
-                <div class="relative">
+              <div class="flex gap-2 flex-shrink-0">
+                <div class="relative flex-1 sm:flex-none">
                   <select
                     id="sort-select"
                     onchange="changeSort(this.value)"
-                    class="h-full pl-3 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 focus:border-brand outline-none appearance-none cursor-pointer hover:bg-slate-50"
+                    class="h-full w-full sm:w-auto pl-3 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 focus:border-brand outline-none appearance-none cursor-pointer hover:bg-slate-50"
                   >
                     <option value="name_asc">A-Z</option>
                     <option value="name_desc">Z-A</option>
@@ -467,16 +549,17 @@
               </div>
               <button
                 onclick="openModal()"
-                class="bg-primary hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-slate-200 text-sm font-semibold transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                class="hidden md:flex bg-primary hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-slate-200 text-sm font-semibold transition transform hover:-translate-y-0.5 items-center justify-center gap-2"
               >
                 <i class="fas fa-plus"></i>
-                <span class="hidden sm:inline">Novo</span>
+                <span>Novo</span>
               </button>
             </div>
           </div>
           <div
-            class="flex border-b border-slate-200 overflow-x-auto no-scrollbar gap-6"
+            class="flex border-b border-slate-200 overflow-x-auto gap-3 sm:gap-6 -mx-4 px-4 md:mx-0 md:px-0"
             id="category-tabs-container"
+            style="scrollbar-width: thin; -webkit-overflow-scrolling: touch"
           ></div>
           <div id="inventory-container" class="pb-20"></div>
         </div>
@@ -484,17 +567,19 @@
         <!-- SHOPPING LIST -->
         <div id="view-shopping" class="view-section hidden space-y-8 fade-in">
           <header
-            class="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-2xl shadow-card border border-slate-100 gap-4"
+            class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-2xl shadow-card border border-slate-100 gap-3 sm:gap-4"
           >
-            <div>
-              <h2 class="text-xl font-bold text-primary">Central de Compras</h2>
-              <p class="text-text-light text-sm mt-1">
+            <div class="w-full sm:w-auto">
+              <h2 class="text-lg sm:text-xl font-bold text-primary">
+                Central de Compras
+              </h2>
+              <p class="text-text-light text-xs sm:text-sm mt-1">
                 Sincronizado com todos os usuários
               </p>
             </div>
             <button
               onclick="window.print()"
-              class="text-slate-500 hover:text-primary bg-slate-50 border border-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
+              class="text-slate-500 hover:text-primary bg-slate-50 border border-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 w-full sm:w-auto justify-center"
             >
               <i class="fas fa-print"></i> Imprimir Lista
             </button>
@@ -514,24 +599,29 @@
         </div>
 
         <!-- HISTORY -->
-        <div id="view-history" class="view-section hidden space-y-6 fade-in">
+        <div
+          id="view-history"
+          class="view-section hidden space-y-4 sm:space-y-6 fade-in"
+        >
           <header>
-            <h2 class="text-2xl font-bold text-primary">Histórico</h2>
+            <h2 class="text-xl sm:text-2xl font-bold text-primary">
+              Histórico
+            </h2>
           </header>
           <div
             class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden"
           >
             <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm">
+              <table class="w-full text-left text-sm min-w-[600px]">
                 <thead
                   class="bg-slate-50/80 border-b border-slate-100 text-text-light font-semibold uppercase text-xs tracking-wider"
                 >
                   <tr>
-                    <th class="p-5">Data</th>
-                    <th class="p-5">Item</th>
-                    <th class="p-5 text-center">Tipo</th>
-                    <th class="p-5">Detalhes</th>
-                    <th class="p-5 text-right">Qtd</th>
+                    <th class="p-3 sm:p-5">Data</th>
+                    <th class="p-3 sm:p-5">Item</th>
+                    <th class="p-3 sm:p-5 text-center">Tipo</th>
+                    <th class="p-3 sm:p-5 hidden sm:table-cell">Detalhes</th>
+                    <th class="p-3 sm:p-5 text-right">Qtd</th>
                   </tr>
                 </thead>
                 <tbody
@@ -550,15 +640,22 @@
         </div>
 
         <!-- SETTINGS -->
-        <div id="view-settings" class="view-section hidden space-y-8 fade-in">
+        <div
+          id="view-settings"
+          class="view-section hidden space-y-6 sm:space-y-8 fade-in"
+        >
           <header>
-            <h2 class="text-2xl font-bold text-primary">Configurações</h2>
+            <h2 class="text-xl sm:text-2xl font-bold text-primary">
+              Configurações
+            </h2>
           </header>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             <div
-              class="bg-white p-8 rounded-2xl shadow-card border border-slate-100 md:col-span-2"
+              class="bg-white p-5 sm:p-8 rounded-2xl shadow-card border border-slate-100 md:col-span-2"
             >
-              <div class="flex justify-between items-center mb-6">
+              <div
+                class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6"
+              >
                 <div>
                   <h3
                     class="font-bold text-lg text-primary flex items-center gap-2"
@@ -614,15 +711,18 @@
     <!-- Modals -->
     <div
       id="modal-form"
-      class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity opacity-0"
+      class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4 transition-opacity opacity-0"
     >
       <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl transform scale-95 transition-all flex flex-col max-h-[90vh]"
+        class="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-2xl transform scale-95 transition-all flex flex-col max-h-[95vh] sm:max-h-[90vh]"
       >
         <div
-          class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-2xl"
+          class="px-4 py-4 sm:px-8 sm:py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-xl sm:rounded-t-2xl"
         >
-          <h3 class="text-xl font-bold text-primary" id="modal-title">
+          <h3
+            class="text-lg sm:text-xl font-bold text-primary"
+            id="modal-title"
+          >
             Novo Item
           </h3>
           <button
@@ -632,21 +732,21 @@
             <i class="fas fa-times"></i>
           </button>
         </div>
-        <div class="p-8 overflow-y-auto">
+        <div class="p-4 sm:p-8 overflow-y-auto">
           <form
             id="item-form"
             onsubmit="handleFormSubmit(event)"
             class="space-y-6"
           >
             <input type="hidden" id="editItemId" />
-            <div class="flex flex-col md:flex-row gap-8">
-              <div class="w-full md:w-1/3">
+            <div class="flex flex-col gap-5 sm:gap-8">
+              <div class="w-full">
                 <label
                   class="block text-xs font-bold text-text-light uppercase tracking-wide mb-2"
                   >Imagem</label
                 >
                 <div
-                  class="border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 h-48 flex flex-col items-center justify-center cursor-pointer hover:border-brand hover:bg-orange-50 transition relative overflow-hidden group"
+                  class="border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 h-40 sm:h-48 flex flex-col items-center justify-center cursor-pointer hover:border-brand hover:bg-orange-50 transition relative overflow-hidden group"
                   onclick="document.getElementById('fileInput').click()"
                 >
                   <input
@@ -684,7 +784,7 @@
                 </div>
                 <input type="hidden" id="imgBase64" />
               </div>
-              <div class="w-full md:w-2/3 space-y-5">
+              <div class="w-full space-y-4 sm:space-y-5">
                 <div>
                   <label
                     class="block text-xs font-bold text-text-light uppercase tracking-wide mb-1.5"
@@ -696,7 +796,7 @@
                     required
                   />
                 </div>
-                <div class="grid grid-cols-2 gap-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                   <div>
                     <label
                       class="block text-xs font-bold text-text-light uppercase tracking-wide mb-1.5"
@@ -739,7 +839,7 @@
                     />
                   </div>
                 </div>
-                <div class="grid grid-cols-2 gap-5 pt-2">
+                <div class="grid grid-cols-2 gap-3 sm:gap-5 pt-2">
                   <div
                     class="bg-slate-50 p-3 rounded-xl border border-slate-100"
                   >
@@ -749,7 +849,7 @@
                     ><input
                       type="number"
                       id="inpQty"
-                      class="w-full bg-transparent font-bold text-xl text-primary outline-none"
+                      class="w-full bg-transparent font-bold text-lg sm:text-xl text-primary outline-none"
                       required
                       min="0"
                     />
@@ -761,7 +861,7 @@
                     ><input
                       type="number"
                       id="inpMin"
-                      class="w-full bg-transparent font-bold text-xl text-error outline-none"
+                      class="w-full bg-transparent font-bold text-lg sm:text-xl text-error outline-none"
                       required
                       min="1"
                     />
@@ -772,17 +872,17 @@
           </form>
         </div>
         <div
-          class="px-8 py-5 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 rounded-b-2xl"
+          class="px-4 py-4 sm:px-8 sm:py-5 bg-slate-50 border-t border-slate-100 flex gap-3 rounded-b-xl sm:rounded-b-2xl"
         >
           <button
             onclick="closeModal()"
-            class="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-white hover:border-slate-300 transition shadow-sm"
+            class="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-white hover:border-slate-300 transition shadow-sm"
           >
             Cancelar
           </button>
           <button
             onclick="document.getElementById('item-form').requestSubmit()"
-            class="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-slate-800 shadow-lg shadow-slate-200 transition transform active:scale-95"
+            class="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-slate-800 shadow-lg shadow-slate-200 transition transform active:scale-95"
           >
             Salvar
           </button>
@@ -989,6 +1089,7 @@
             handleReceiveSubmit,
             setActiveTab,
             prepareEdit,
+            toggleMobileSidebar,
           });
 
           switchView("dashboard");
@@ -1318,22 +1419,22 @@
           .map((log) => {
             const d = new Date(log.date),
               isPos = log.change > 0;
-            return `<tr class="hover:bg-slate-50"><td class="p-5 whitespace-nowrap text-slate-500 font-mono text-xs">${d.toLocaleDateString(
+            return `<tr class="hover:bg-slate-50"><td class="p-3 sm:p-5 whitespace-nowrap text-slate-500 font-mono text-xs">${d.toLocaleDateString(
               "pt-BR"
             )} ${d.toLocaleTimeString("pt-BR", {
               hour: "2-digit",
               minute: "2-digit",
-            })}</td><td class="p-5 font-bold text-slate-700">${
+            })}</td><td class="p-3 sm:p-5 font-bold text-slate-700 text-xs sm:text-sm">${
               log.itemName
-            }</td><td class="p-5 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${
+            }</td><td class="p-3 sm:p-5 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${
               isPos
                 ? "bg-emerald-50 text-success"
                 : "bg-orange-50 text-orange-600"
             }">${
               log.action
-            }</span></td><td class="p-5 text-xs text-slate-500">${
+            }</span></td><td class="p-3 sm:p-5 text-xs text-slate-500 hidden sm:table-cell">${
               log.details || "-"
-            }</td><td class="p-5 text-right font-mono font-bold ${
+            }</td><td class="p-3 sm:p-5 text-right font-mono font-bold text-sm ${
               isPos ? "text-success" : "text-error"
             }">${isPos ? "+" : ""}${log.change}</td></tr>`;
           })
@@ -1632,6 +1733,13 @@
           .getElementById("upload-placeholder")
           .classList.remove("hidden");
       }
+      function toggleMobileSidebar() {
+        const sidebar = document.getElementById("main-sidebar");
+        const overlay = document.getElementById("sidebar-overlay");
+        sidebar.classList.toggle("mobile-open");
+        overlay.classList.toggle("active");
+      }
+
       function switchView(v) {
         document
           .querySelectorAll(".view-section")
@@ -1641,6 +1749,15 @@
           .querySelectorAll(".nav-link")
           .forEach((e) => e.classList.remove("active"));
         document.getElementById(`nav-${v}`).classList.add("active");
+
+        // Fechar sidebar mobile ao trocar de view
+        if (window.innerWidth < 768) {
+          const sidebar = document.getElementById("main-sidebar");
+          const overlay = document.getElementById("sidebar-overlay");
+          sidebar.classList.remove("mobile-open");
+          overlay.classList.remove("active");
+        }
+
         if (v === "inventory") {
           renderCategoryTabs();
           renderInventory();
@@ -1673,5 +1790,3 @@
     </script>
   </body>
 </html>
-
-
