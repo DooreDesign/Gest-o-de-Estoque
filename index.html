@@ -16,10 +16,12 @@
       tailwind.config = {
         theme: {
           extend: {
+            screens: {
+              "3xl": "1920px",
+            },
             colors: {
               primary: "#0f172a",
               brand: "#f97316",
-              "brand-hover": "#ea580c",
               background: "#f8fafc",
               success: "#10b981",
               error: "#ef4444",
@@ -28,8 +30,7 @@
             },
             boxShadow: {
               card: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)",
-              floating:
-                "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              floating: "0 10px 30px -10px rgba(0,0,0,0.12)",
             },
           },
         },
@@ -38,6 +39,11 @@
 
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+      html,
+      body {
+        overflow-x: hidden;
+        max-width: 100vw;
+      }
       body {
         font-family: "Inter", sans-serif;
         background-color: #f8fafc;
@@ -91,13 +97,47 @@
 
       .tab-btn {
         border-bottom: 2px solid transparent;
-        transition: all 0.3s;
+        transition: all 0.2s;
         color: #64748b;
+        border-radius: 0.5rem;
+      }
+      .tab-btn:hover {
+        color: #0f172a;
+        background-color: #f1f5f9;
       }
       .tab-btn.active {
         border-bottom-color: #f97316;
         color: #0f172a;
         font-weight: 600;
+        background-color: #fff7ed;
+      }
+      @media (min-width: 640px) {
+        .tab-btn {
+          border-radius: 0.5rem 0.5rem 0 0;
+          border-bottom: 3px solid transparent;
+        }
+        .tab-btn:hover {
+          background-color: #f8fafc;
+        }
+        .tab-btn.active {
+          background-color: white;
+          border-bottom-color: #f97316;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+      }
+      @media (max-width: 639px) {
+        .tab-btn {
+          background-color: #f1f5f9;
+          border-bottom: none;
+          border-radius: 0.5rem;
+        }
+        .tab-btn:hover {
+          background-color: #e2e8f0;
+        }
+        .tab-btn.active {
+          background-color: #f97316;
+          color: white;
+        }
       }
 
       /* Imagens */
@@ -110,11 +150,33 @@
         overflow: hidden;
         position: relative;
       }
+      @media (max-width: 640px) {
+        .card-img-wrapper {
+          height: 120px;
+        }
+      }
       .card-img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.5s ease;
+        /* faster transform to avoid perceived lag while scrolling */
+        transition: transform 0.22s ease;
+      }
+      /* Help the browser reduce scroll jank on touch/desktop by keeping overscroll contained */
+      #content-area {
+        overscroll-behavior: contain;
+      }
+      /* Hint for smoother scroll/painting on many items */
+      .inventory-card {
+        will-change: transform;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        transform: translateZ(0);
+      }
+      .card-img {
+        will-change: transform;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
       }
       .inventory-card:hover .card-img {
         transform: scale(1.08);
@@ -133,7 +195,7 @@
       }
       @media (max-width: 640px) {
         #toast-container {
-          bottom: 12px;
+          bottom: calc(80px + env(safe-area-inset-bottom));
           right: 12px;
           left: 12px;
         }
@@ -156,12 +218,33 @@
       @media (max-width: 640px) {
         .toast {
           min-width: auto;
+          width: 100%;
           padding: 12px 16px;
           font-size: 13px;
         }
       }
       .toast.show {
         transform: translateX(0);
+      }
+
+      /* Touch targets para mobile tabs */
+      @media (max-width: 640px) {
+        .tab-btn {
+          min-width: auto;
+          padding: 0.5rem 1rem;
+          font-size: 0.75rem;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+      }
+
+      /* Hide scrollbar for tabs on mobile */
+      .tabs-scroll {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .tabs-scroll::-webkit-scrollbar {
+        display: none;
       }
 
       /* Mobile Sidebar Overlay */
@@ -202,6 +285,288 @@
         aside.mobile-open {
           transform: translateX(0);
         }
+        /* Prevent iOS zoom on inputs */
+        input,
+        select,
+        textarea {
+          font-size: 16px !important;
+        }
+      }
+
+      /* Safe Area for iOS */
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      /* Ultrawide Container */
+      .ultrawide-container {
+        max-width: 1920px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+      }
+
+      /* ========== ESTILOS DE IMPRESSÃO ========== */
+      @media print {
+        @page {
+          size: A4 portrait;
+          margin: 12mm 8mm;
+        }
+
+        /* Reset geral */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        /* Ocultar elementos desnecessários */
+        body {
+          background: white !important;
+          overflow: visible !important;
+          height: auto !important;
+          font-size: 10pt !important;
+        }
+
+        aside,
+        #sidebar-overlay,
+        #loading-screen,
+        #toast-container,
+        #btn-scroll-top,
+        .mobile-nav,
+        nav[class*="md:hidden"],
+        [class*="fixed bottom"],
+        .no-print {
+          display: none !important;
+        }
+
+        /* Container principal */
+        main {
+          width: 100% !important;
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: visible !important;
+          height: auto !important;
+        }
+
+        #content-area {
+          overflow: visible !important;
+          height: auto !important;
+          padding: 0 !important;
+        }
+
+        /* Ocultar todas as views exceto shopping */
+        .view-section {
+          display: none !important;
+        }
+
+        #view-shopping {
+          display: block !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+
+        /* Header da lista de compras */
+        #view-shopping > header {
+          background: none !important;
+          border: none !important;
+          box-shadow: none !important;
+          padding: 0 !important;
+          margin-bottom: 4mm !important;
+          border-radius: 0 !important;
+          display: block !important;
+        }
+
+        #view-shopping > header > div {
+          width: 100% !important;
+        }
+
+        #view-shopping > header .print-title {
+          font-size: 16pt !important;
+          font-weight: 700 !important;
+          color: #0f172a !important;
+          margin: 0 0 1mm 0 !important;
+          text-align: center !important;
+          display: block !important;
+          border-bottom: 1.5pt solid #0f172a !important;
+          padding-bottom: 2mm !important;
+        }
+
+        #view-shopping > header .print-subtitle {
+          display: block !important;
+          font-size: 8pt !important;
+          color: #64748b !important;
+          text-align: center !important;
+          margin-top: 1mm !important;
+        }
+
+        /* Esconder botão de imprimir */
+        #view-shopping > header button {
+          display: none !important;
+        }
+
+        /* ===== TABELA DE ITENS ===== */
+        #shopping-grid {
+          display: table !important;
+          width: 100% !important;
+          border-collapse: collapse !important;
+          margin-top: 3mm !important;
+        }
+
+        /* Cabeçalho da tabela (gerado via CSS) */
+        #shopping-grid::before {
+          content: "";
+          display: table-row !important;
+          background: #f1f5f9 !important;
+          font-weight: 700 !important;
+          font-size: 7pt !important;
+          text-transform: uppercase !important;
+          color: #475569 !important;
+        }
+
+        /* Cada item como linha de tabela */
+        #shopping-grid > div {
+          display: table-row !important;
+          background: white !important;
+          border: none !important;
+          box-shadow: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          page-break-inside: avoid !important;
+        }
+
+        /* Ocultar elementos decorativos */
+        #shopping-grid > div > .absolute,
+        #shopping-grid > div::before {
+          display: none !important;
+        }
+
+        /* Resetar todos os filhos como células */
+        #shopping-grid > div > * {
+          display: table-cell !important;
+          vertical-align: middle !important;
+          padding: 2mm 2mm !important;
+          border-bottom: 0.5pt solid #e2e8f0 !important;
+        }
+
+        /* Primeira coluna - Checkbox */
+        #shopping-grid > div::after {
+          content: "☐" !important;
+          display: table-cell !important;
+          width: 6mm !important;
+          text-align: center !important;
+          font-size: 12pt !important;
+          vertical-align: middle !important;
+          padding: 2mm 1mm !important;
+          border-bottom: 0.5pt solid #e2e8f0 !important;
+        }
+
+        /* Container da imagem */
+        #shopping-grid > div > div:first-child {
+          width: 12mm !important;
+          padding: 1.5mm !important;
+        }
+
+        /* Imagem do item */
+        #shopping-grid > div img {
+          width: 8mm !important;
+          height: 8mm !important;
+          min-width: 8mm !important;
+          max-width: 8mm !important;
+          border-radius: 1mm !important;
+          object-fit: cover !important;
+        }
+
+        /* Ícone placeholder quando não tem imagem */
+        #shopping-grid
+          > div
+          > div:first-child
+          > div:first-child
+          > div:first-child {
+          width: 8mm !important;
+          height: 8mm !important;
+          font-size: 6pt !important;
+        }
+
+        /* Ocultar versão mobile do nome */
+        #shopping-grid > div > div:first-child > div:nth-child(2) {
+          display: none !important;
+        }
+
+        /* Container de info desktop - Nome e detalhes */
+        #shopping-grid > div > div.hidden.sm\\:flex,
+        #shopping-grid > div > div:nth-child(2) {
+          display: table-cell !important;
+          width: auto !important;
+          padding: 2mm 3mm !important;
+        }
+
+        /* Nome do item */
+        #shopping-grid h4 {
+          font-size: 9pt !important;
+          font-weight: 600 !important;
+          color: #0f172a !important;
+          margin: 0 !important;
+          line-height: 1.2 !important;
+        }
+
+        /* Info secundária (fornecedor, estoque) */
+        #shopping-grid .text-text-light,
+        #shopping-grid [class*="text-xs"] {
+          font-size: 7pt !important;
+          color: #64748b !important;
+          margin-top: 0.5mm !important;
+        }
+
+        /* Coluna de quantidade sugerida */
+        #shopping-grid > div > div:last-child {
+          width: 22mm !important;
+          text-align: right !important;
+          padding-right: 2mm !important;
+        }
+
+        /* Label "Sugestão" */
+        #shopping-grid > div > div:last-child > div:first-child {
+          font-size: 6pt !important;
+          color: #94a3b8 !important;
+          text-transform: uppercase !important;
+          margin-bottom: 0 !important;
+        }
+
+        /* Número da sugestão */
+        #shopping-grid [class*="text-lg"],
+        #shopping-grid [class*="text-xl"] {
+          font-size: 11pt !important;
+          font-weight: 700 !important;
+          color: #0f172a !important;
+        }
+
+        /* Esconder botões de ação */
+        #shopping-grid button {
+          display: none !important;
+        }
+
+        /* Fundo alternado para linhas */
+        #shopping-grid > div:nth-child(even) > * {
+          background: #fafafa !important;
+        }
+
+        /* Estado vazio - ocultar */
+        #empty-state-shopping {
+          display: none !important;
+        }
+
+        /* Rodapé de impressão */
+        #view-shopping::after {
+          content: "Door & Design - Lista de Compras" !important;
+          display: block !important;
+          font-size: 7pt !important;
+          color: #94a3b8 !important;
+          text-align: center !important;
+          margin-top: 5mm !important;
+          padding-top: 3mm !important;
+          border-top: 0.5pt solid #e2e8f0 !important;
+        }
       }
     </style>
   </head>
@@ -236,90 +601,128 @@
           class="absolute -top-10 -left-10 w-24 h-24 bg-orange-50 rounded-full blur-2xl opacity-50"
         ></div>
         <div class="flex items-center gap-3 relative z-10">
-          <div
-            class="w-11 h-11 bg-primary rounded-xl flex items-center justify-center text-white shadow-xl shadow-slate-200"
-          >
-            <i class="fas fa-layer-group text-xl text-brand"></i>
-          </div>
-          <div class="flex flex-col">
+          <div class="flex flex-col leading-tight">
             <h1
-              class="font-extrabold text-xl leading-none text-primary tracking-tight"
+              class="font-extrabold text-sm sm:text-base text-primary tracking-tight"
             >
-              DOOR<span class="text-brand">&</span>DESIGN
+              <span class="text-brand block text-lg sm:text-2xl leading-none"
+                >Door & Design</span
+              >
+              <span
+                class="block text-xs sm:text-sm text-slate-400 font-medium mt-0"
+                >Gestão de Estoque</span
+              >
             </h1>
-            <span
-              class="text-[9px] uppercase font-bold text-slate-400 tracking-[0.2em] mt-1 ml-0.5"
-              >Online • Team</span
-            >
           </div>
         </div>
       </div>
 
       <nav class="flex-1 py-6 space-y-1 overflow-y-auto px-4">
-        <button
-          onclick="switchView('dashboard')"
-          id="nav-dashboard"
-          class="nav-link active w-full flex items-center gap-4 px-4 py-3.5 rounded-lg transition-all text-text-light hover:bg-slate-50 hover:text-primary"
+        <!-- Principal -->
+        <div
+          class="px-3 pt-2 pb-1 text-[11px] uppercase text-slate-400 font-semibold tracking-wider"
         >
-          <i class="fas fa-chart-pie w-5 text-center"></i>
-          <span class="text-sm font-medium">Visão Geral</span>
-        </button>
-        <button
-          onclick="switchView('inventory')"
-          id="nav-inventory"
-          class="nav-link w-full flex items-center gap-4 px-4 py-3.5 rounded-lg transition-all text-text-light hover:bg-slate-50 hover:text-primary"
+          Principal
+        </div>
+        <div class="px-2">
+          <button
+            onclick="switchView('dashboard')"
+            id="nav-dashboard"
+            class="nav-link active w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-all text-text-light hover:bg-slate-50 hover:text-primary"
+          >
+            <i class="fas fa-chart-pie w-5 text-center"></i>
+            <span class="text-sm font-medium">Visão Geral</span>
+          </button>
+        </div>
+        <!-- Gestão -->
+        <div
+          class="px-3 pt-3 pb-1 text-[11px] uppercase text-slate-400 font-semibold tracking-wider"
         >
-          <i class="fas fa-boxes w-5 text-center"></i>
-          <span class="text-sm font-medium">Estoque</span>
-        </button>
-        <button
-          onclick="switchView('shopping')"
-          id="nav-shopping"
-          class="nav-link w-full flex items-center gap-4 px-4 py-3.5 rounded-lg transition-all text-text-light hover:bg-slate-50 hover:text-primary group"
+          Gestão
+        </div>
+        <div class="px-2">
+          <button
+            onclick="switchView('inventory')"
+            id="nav-inventory"
+            class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-all text-text-light hover:bg-slate-50 hover:text-primary"
+          >
+            <i class="fas fa-boxes w-5 text-center"></i>
+            <span class="text-sm font-medium">Estoque</span>
+          </button>
+          <button
+            onclick="switchView('shopping')"
+            id="nav-shopping"
+            class="nav-link w-full flex items-center gap-4 px-4 py-3 mt-1 rounded-lg transition-all text-text-light hover:bg-slate-50 hover:text-primary group"
+          >
+            <div class="relative w-5 text-center">
+              <i
+                class="fas fa-shopping-cart group-hover:text-brand transition-colors"
+              ></i>
+              <span
+                id="badge-count"
+                class="absolute -top-2 -right-2 bg-error text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm hidden scale-0 transition-transform duration-300"
+                >0</span
+              >
+            </div>
+            <span class="text-sm font-medium">Compras</span>
+          </button>
+        </div>
+        <!-- Registros -->
+        <div
+          class="px-3 pt-3 pb-1 text-[11px] uppercase text-slate-400 font-semibold tracking-wider"
         >
-          <div class="relative w-5 text-center">
-            <i
-              class="fas fa-shopping-cart group-hover:text-brand transition-colors"
-            ></i>
-            <span
-              id="badge-count"
-              class="absolute -top-2 -right-2 bg-error text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm hidden scale-0 transition-transform duration-300"
-              >0</span
-            >
-          </div>
-          <span class="text-sm font-medium">Compras</span>
-        </button>
-        <button
-          onclick="switchView('history')"
-          id="nav-history"
-          class="nav-link w-full flex items-center gap-4 px-4 py-3.5 rounded-lg transition-all text-text-light hover:bg-slate-50 hover:text-primary"
-        >
-          <i class="fas fa-history w-5 text-center"></i>
-          <span class="text-sm font-medium">Histórico</span>
-        </button>
+          Registros
+        </div>
+        <div class="px-2">
+          <button
+            onclick="switchView('history')"
+            id="nav-history"
+            class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-all text-text-light hover:bg-slate-50 hover:text-primary"
+          >
+            <i class="fas fa-history w-5 text-center"></i>
+            <span class="text-sm font-medium">Histórico</span>
+          </button>
+        </div>
         <div class="my-4 border-t border-slate-100 mx-2"></div>
-        <button
-          onclick="switchView('settings')"
-          id="nav-settings"
-          class="nav-link w-full flex items-center gap-4 px-4 py-3.5 rounded-lg transition-all text-text-light hover:bg-slate-50 hover:text-primary"
+        <!-- Administração -->
+        <div
+          class="px-3 pt-3 pb-1 text-[11px] uppercase text-slate-400 font-semibold tracking-wider"
         >
-          <i class="fas fa-cog w-5 text-center"></i>
-          <span class="text-sm font-medium">Configurações</span>
-        </button>
+          Administração
+        </div>
+        <div class="px-2">
+          <button
+            onclick="switchView('settings')"
+            id="nav-settings"
+            class="nav-link w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-all text-text-light hover:bg-slate-50 hover:text-primary"
+          >
+            <i class="fas fa-cog w-5 text-center"></i>
+            <span class="text-sm font-medium">Configurações</span>
+          </button>
+        </div>
       </nav>
 
-      <div class="p-6 border-t border-slate-100 bg-white">
-        <div class="text-center">
-          <p class="text-[10px] text-slate-400 font-medium">
-            &copy; 2025 Door & Design
-          </p>
-          <div class="flex items-center justify-center gap-2 mt-2">
+      <!-- Sidebar footer: compact, connection + last sync + version (no user/actions) -->
+      <div
+        class="p-4 sm:p-5 border-t border-slate-100 bg-white sticky bottom-0"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
             <span
-              class="w-2 h-2 rounded-full bg-green-500 animate-pulse"
+              id="sidebar-sync-indicator"
+              class="w-2 h-2 rounded-full bg-red-400"
             ></span>
-            <span class="text-[10px] text-slate-500 font-bold"
-              >Sistema Online</span
-            >
+            <div>
+              <div
+                id="sidebar-status-text"
+                class="text-xs font-semibold text-slate-700"
+              >
+                Offline
+              </div>
+              <div class="text-[10px] text-slate-400">
+                Última Sincronização: <span id="sidebar-last-sync">—</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -331,16 +734,19 @@
       <header
         class="md:hidden bg-white px-4 h-16 shadow-sm flex justify-between items-center z-10 sticky top-0"
       >
-        <div class="flex items-center gap-2">
-          <div
-            class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-white text-lg"
-          >
-            <i class="fas fa-layer-group text-brand text-sm"></i>
+        <div class="flex items-center gap-3">
+          <div class="flex flex-col leading-tight">
+            <span
+              class="font-bold tracking-tight text-sm sm:text-base text-primary"
+            >
+              <span class="text-brand block text-lg sm:text-xl leading-none"
+                >Door & Design</span
+              >
+              <span class="block text-xs text-slate-500 font-semibold mt-0"
+                >Gestão de Estoque</span
+              >
+            </span>
           </div>
-          <span
-            class="font-bold text-primary tracking-tight text-sm sm:text-base"
-            >DOOR<span class="text-brand">&</span>DESIGN</span
-          >
         </div>
         <button
           onclick="toggleMobileSidebar()"
@@ -352,172 +758,291 @@
 
       <div
         id="content-area"
-        class="flex-1 overflow-y-auto p-4 md:p-8 lg:p-10 relative scroll-smooth"
+        class="flex-1 overflow-y-auto p-4 md:p-8 lg:p-10 relative scroll-smooth pb-safe"
+        style="-webkit-overflow-scrolling: touch; scrollbar-gutter: stable"
       >
         <!-- DASHBOARD -->
-        <div id="view-dashboard" class="view-section space-y-6 fade-in">
-          <header
-            class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-4"
-          >
+        <div
+          id="view-dashboard"
+          class="view-section space-y-6 fade-in ultrawide-container"
+        >
+          <header class="flex justify-between items-end mb-2">
             <div>
-              <h2 class="text-xl sm:text-2xl font-bold text-primary">
-                Painel de Controle
-              </h2>
-              <p class="text-text-light text-xs sm:text-sm">
-                Dados sincronizados em tempo real
-              </p>
+              <h2 class="text-2xl font-bold text-primary">Dashboard</h2>
             </div>
-            <div class="text-left sm:text-right">
-              <p
-                class="text-xs text-slate-400 font-semibold uppercase tracking-wider"
-              >
-                Itens Totais
-              </p>
-              <p
-                class="text-xl sm:text-2xl font-bold text-primary"
-                id="dash-total-items"
+            <div class="text-right hidden sm:block">
+              <div class="text-xs font-bold text-slate-400 uppercase">Data</div>
+              <div
+                class="text-sm font-bold text-primary"
+                id="dash-date-display"
               >
                 ...
-              </p>
+              </div>
             </div>
           </header>
 
-          <div
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 h-auto"
-          >
-            <!-- Critical Alert -->
+          <!-- Metrics Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- Total Items -->
             <div
-              class="bg-white p-4 sm:p-6 rounded-2xl shadow-card border border-red-100 relative overflow-hidden flex flex-col min-h-[250px]"
+              class="bg-white p-4 rounded-2xl shadow-card border border-slate-100"
             >
-              <div
-                class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 z-10"
-              >
-                <h3
-                  class="font-bold text-error flex items-center gap-2 text-sm sm:text-base"
+              <div class="flex items-center gap-3 mb-2">
+                <div
+                  class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"
                 >
-                  <i class="fas fa-bell"></i> Atenção Necessária
-                </h3>
-                <span
-                  class="bg-red-50 text-error text-xs font-bold px-2 py-1 rounded-lg whitespace-nowrap"
-                  id="dash-critical-count"
-                  >0 itens</span
-                >
-              </div>
-              <div
-                class="flex-1 overflow-y-auto pr-2 space-y-3"
-                id="dash-critical-list"
-              >
-                <div class="animate-pulse flex space-x-4">
-                  <div class="flex-1 space-y-4 py-1">
-                    <div class="h-4 bg-slate-200 rounded w-3/4"></div>
-                  </div>
+                  <i class="fas fa-box"></i>
                 </div>
+                <span class="text-xs font-bold text-slate-400 uppercase"
+                  >Total</span
+                >
               </div>
-              <button
-                onclick="switchView('shopping')"
-                class="w-full mt-4 bg-error/10 hover:bg-error/20 text-error font-semibold py-2 rounded-lg text-sm transition"
-              >
-                Ver Compras
-              </button>
-            </div>
-
-            <!-- Chart -->
-            <div
-              class="bg-white p-4 sm:p-6 rounded-2xl shadow-card border border-slate-100 flex flex-col min-h-[250px]"
-            >
-              <h3
-                class="font-bold text-primary mb-4 flex items-center gap-2 text-sm sm:text-base"
-              >
-                <i class="fas fa-chart-pie text-brand"></i> Distribuição
-              </h3>
               <div
-                class="flex-1 flex items-center justify-center relative min-h-[180px] sm:min-h-[200px]"
+                class="text-2xl font-bold text-primary"
+                id="dash-metric-total"
               >
-                <canvas id="categoryChart"></canvas>
+                0
               </div>
             </div>
-
-            <!-- Top Movers -->
+            <!-- Critical -->
             <div
-              class="bg-white p-4 sm:p-6 rounded-2xl shadow-card border border-slate-100 flex flex-col min-h-[250px]"
+              class="bg-white p-4 rounded-2xl shadow-card border border-slate-100"
             >
-              <h3
-                class="font-bold text-primary mb-4 flex items-center gap-2 text-sm sm:text-base"
-              >
-                <i class="fas fa-fire text-warning"></i> Maior Saída (Top 5)
-              </h3>
+              <div class="flex items-center gap-3 mb-2">
+                <div
+                  class="w-8 h-8 rounded-lg bg-red-50 text-error flex items-center justify-center"
+                >
+                  <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <span class="text-xs font-bold text-slate-400 uppercase"
+                  >Críticos</span
+                >
+              </div>
               <div
-                class="flex-1 overflow-y-auto space-y-0"
-                id="dash-top-movers"
-              ></div>
+                class="text-2xl font-bold text-error"
+                id="dash-metric-critical"
+              >
+                0
+              </div>
+            </div>
+            <!-- Entries -->
+            <div
+              class="bg-white p-4 rounded-2xl shadow-card border border-slate-100"
+            >
+              <div class="flex items-center gap-3 mb-2">
+                <div
+                  class="w-8 h-8 rounded-lg bg-emerald-50 text-success flex items-center justify-center"
+                >
+                  <i class="fas fa-arrow-down"></i>
+                </div>
+                <span class="text-xs font-bold text-slate-400 uppercase"
+                  >Entradas</span
+                >
+              </div>
+              <div
+                class="text-2xl font-bold text-success"
+                id="dash-metric-entries"
+              >
+                0
+              </div>
+            </div>
+            <!-- Exits -->
+            <div
+              class="bg-white p-4 rounded-2xl shadow-card border border-slate-100"
+            >
+              <div class="flex items-center gap-3 mb-2">
+                <div
+                  class="w-8 h-8 rounded-lg bg-orange-50 text-brand flex items-center justify-center"
+                >
+                  <i class="fas fa-arrow-up"></i>
+                </div>
+                <span class="text-xs font-bold text-slate-400 uppercase"
+                  >Saídas</span
+                >
+              </div>
+              <div class="text-2xl font-bold text-brand" id="dash-metric-exits">
+                0
+              </div>
             </div>
           </div>
 
-          <!-- Recent Activity -->
-          <div
-            class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden"
-          >
+          <!-- Main Content Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 3xl:grid-cols-4 gap-6">
+            <!-- Left: Recent Activity (2 cols) -->
             <div
-              class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-slate-50/50"
+              class="lg:col-span-2 3xl:col-span-3 bg-white rounded-2xl shadow-card border border-slate-100 flex flex-col min-h-[300px] sm:min-h-[400px]"
             >
-              <h3
-                class="font-bold text-slate-700 text-xs sm:text-sm uppercase tracking-wide"
+              <div
+                class="p-4 sm:p-5 border-b border-slate-50 flex justify-between items-center"
               >
-                Últimas Movimentações (Global)
-              </h3>
-              <button
-                onclick="switchView('history')"
-                class="text-xs font-bold text-brand hover:underline whitespace-nowrap"
-              >
-                Ver Histórico
-              </button>
+                <h3 class="font-bold text-primary text-sm sm:text-base">
+                  Movimentações Recentes
+                </h3>
+                <button
+                  onclick="switchView('history')"
+                  class="text-xs font-bold text-brand hover:underline"
+                >
+                  Ver Tudo
+                </button>
+              </div>
+              <div class="flex-1 overflow-auto">
+                <!-- Mobile Cards -->
+                <div id="dash-recent-cards" class="p-3 space-y-2 sm:hidden">
+                  <!-- Cards renderizados pelo JS -->
+                </div>
+                <!-- Desktop Table -->
+                <div class="hidden sm:block">
+                  <table class="w-full text-left text-sm">
+                    <thead
+                      class="bg-slate-50 text-xs uppercase text-slate-400 font-semibold sticky top-0"
+                    >
+                      <tr>
+                        <th class="p-4">Item</th>
+                        <th class="p-4 text-center">Tipo</th>
+                        <th class="p-4 text-right">Qtd</th>
+                        <th class="p-4 text-right text-slate-300">
+                          <i class="far fa-clock"></i>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody
+                      id="dash-recent-table"
+                      class="divide-y divide-slate-50"
+                    >
+                      <!-- Rows -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm min-w-[500px]">
-                <tbody
-                  id="dash-recent-table"
-                  class="divide-y divide-slate-50 text-slate-600"
-                ></tbody>
-              </table>
+
+            <!-- Right: Quick Actions & Alerts (1 col) -->
+            <div class="space-y-4 sm:space-y-6 relative">
+              <!-- Quick Search Card -->
+              <div
+                class="bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-2xl shadow-floating p-4 sm:p-5"
+              >
+                <div class="flex items-center gap-2 mb-3">
+                  <div
+                    class="w-8 h-8 rounded-lg bg-brand/20 flex items-center justify-center"
+                  >
+                    <i class="fas fa-search text-brand text-sm"></i>
+                  </div>
+                  <div>
+                    <h3 id="dash-quick-label" class="font-bold text-sm">
+                      Busca Rápida
+                    </h3>
+                  </div>
+                </div>
+
+                <div class="relative">
+                  <input
+                    type="text"
+                    id="dash-quick-search"
+                    onkeyup="dashQuickSearch(this.value)"
+                    onfocus="this.parentElement.querySelector('#dash-quick-results').classList.remove('hidden')"
+                    aria-label="Buscar item"
+                    aria-controls="dash-quick-results"
+                    aria-expanded="false"
+                    autocomplete="off"
+                    class="w-full bg-white/10 border border-white/20 text-white placeholder-slate-400 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:bg-white/15 focus:border-brand transition"
+                  />
+                </div>
+
+                <!-- Default hint -->
+                <div
+                  id="dash-quick-default"
+                  class="mt-3 flex items-center justify-center gap-2 text-[11px] text-slate-400"
+                >
+                  <span
+                    >Digite para buscar — clique em um resultado para abrir o
+                    item.</span
+                  >
+                </div>
+              </div>
+
+              <!-- Results Dropdown - OUTSIDE the card to avoid overflow issues -->
+              <div
+                id="dash-quick-results"
+                role="listbox"
+                aria-labelledby="dash-quick-label"
+                class="absolute top-[115px] left-0 right-0 mx-0 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden hidden max-h-72 overflow-y-auto text-slate-700"
+                style="z-index: 50"
+              ></div>
+
+              <!-- Critical Stock List -->
+              <div
+                class="bg-white rounded-2xl shadow-card border border-slate-100 p-4 sm:p-5"
+              >
+                <div class="flex justify-between items-center mb-3 sm:mb-4">
+                  <h3 class="font-bold text-slate-700 text-sm sm:text-base">
+                    Reposição Necessária
+                  </h3>
+                  <span
+                    class="bg-red-100 text-error text-xs font-bold px-2 py-1 rounded-lg"
+                    id="dash-critical-badge"
+                    >0</span
+                  >
+                </div>
+                <div
+                  id="dash-critical-list"
+                  class="space-y-2 sm:space-y-3 max-h-[250px] sm:max-h-[300px] overflow-y-auto pr-1"
+                >
+                  <!-- Items -->
+                </div>
+                <button
+                  onclick="switchView('shopping')"
+                  class="w-full mt-3 sm:mt-4 py-2.5 text-xs font-bold text-slate-500 hover:text-primary border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+                >
+                  Ver Lista de Compras
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- INVENTORY -->
-        <div id="view-inventory" class="view-section hidden space-y-6 fade-in">
+        <div
+          id="view-inventory"
+          class="view-section hidden space-y-6 fade-in ultrawide-container"
+        >
           <div
-            class="flex flex-col gap-3 sm:gap-4 sticky top-0 bg-background/95 backdrop-blur z-20 pb-3 sm:pb-4 pt-2 border-b border-slate-200/60"
+            class="flex flex-col gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-2xl shadow-card border border-slate-100"
           >
             <div class="flex justify-between items-center">
-              <h2 class="text-xl sm:text-2xl font-bold text-primary">
+              <h2 class="text-lg sm:text-2xl font-bold text-primary">
                 Estoque
               </h2>
               <button
                 onclick="openModal()"
-                class="md:hidden bg-primary hover:bg-slate-800 text-white p-2.5 rounded-xl shadow-lg text-sm font-semibold transition"
+                title="Adicionar"
+                aria-label="Adicionar"
+                class="md:hidden bg-primary hover:bg-slate-800 text-white p-2 sm:p-2.5 rounded-xl shadow-lg text-sm font-semibold transition flex items-center justify-center"
               >
                 <i class="fas fa-plus"></i>
               </button>
             </div>
-            <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
-              <div class="relative flex-1 group">
+            <div
+              class="flex flex-col gap-2 sm:flex-row sm:gap-3 w-full items-stretch sm:items-center"
+            >
+              <div class="relative flex-1 group w-full">
                 <input
                   type="text"
                   id="search-input"
                   onkeyup="renderInventory()"
                   placeholder="Buscar..."
-                  class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand focus:ring-4 focus:ring-brand/10 outline-none text-sm transition shadow-sm bg-white"
+                  class="w-full h-10 pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand focus:ring-4 focus:ring-brand/10 outline-none text-sm transition shadow-sm bg-white"
                 />
                 <i
                   class="fas fa-search absolute left-4 top-3 text-slate-400 group-focus-within:text-brand transition-colors"
                 ></i>
               </div>
-              <div class="flex gap-2 flex-shrink-0">
+              <div class="flex gap-2 w-full sm:w-auto">
                 <div class="relative flex-1 sm:flex-none">
                   <select
                     id="sort-select"
                     onchange="changeSort(this.value)"
-                    class="h-full w-full sm:w-auto pl-3 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 focus:border-brand outline-none appearance-none cursor-pointer hover:bg-slate-50"
+                    class="h-10 w-full sm:w-auto pl-3 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 focus:border-brand outline-none appearance-none cursor-pointer hover:bg-slate-50"
                   >
                     <option value="name_asc">A-Z</option>
                     <option value="name_desc">Z-A</option>
@@ -529,19 +1054,19 @@
                   ></i>
                 </div>
                 <div
-                  class="flex bg-white rounded-xl border border-slate-200 p-1"
+                  class="flex bg-white rounded-xl border border-slate-200 p-1 h-10 items-center flex-shrink-0"
                 >
                   <button
                     onclick="toggleViewMode('grid')"
                     id="btn-view-grid"
-                    class="p-2 rounded-lg text-slate-400 hover:text-brand transition active-view"
+                    class="p-2 rounded-lg text-slate-400 hover:text-brand transition active-view h-8 w-8 flex items-center justify-center"
                   >
                     <i class="fas fa-th-large"></i>
                   </button>
                   <button
                     onclick="toggleViewMode('list')"
                     id="btn-view-list"
-                    class="p-2 rounded-lg text-slate-400 hover:text-brand transition"
+                    class="p-2 rounded-lg text-slate-400 hover:text-brand transition h-8 w-8 flex items-center justify-center"
                   >
                     <i class="fas fa-list"></i>
                   </button>
@@ -549,42 +1074,45 @@
               </div>
               <button
                 onclick="openModal()"
-                class="hidden md:flex bg-primary hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-slate-200 text-sm font-semibold transition transform hover:-translate-y-0.5 items-center justify-center gap-2"
+                class="hidden md:flex bg-primary hover:bg-slate-800 text-white px-4 py-2.5 h-10 rounded-xl shadow-lg shadow-slate-200 text-sm font-semibold transition transform hover:-translate-y-0.5 items-center justify-center gap-2"
               >
                 <i class="fas fa-plus"></i>
-                <span>Novo</span>
+                <span>Adicionar</span>
               </button>
             </div>
           </div>
           <div
-            class="flex border-b border-slate-200 overflow-x-auto gap-3 sm:gap-6 -mx-4 px-4 md:mx-0 md:px-0"
+            class="flex bg-white sm:bg-slate-50/50 rounded-xl sm:rounded-none border border-slate-100 sm:border-0 sm:border-b sm:border-slate-200 overflow-x-auto gap-1 sm:gap-1 p-1.5 sm:p-0 sm:pb-0 tabs-scroll"
             id="category-tabs-container"
-            style="scrollbar-width: thin; -webkit-overflow-scrolling: touch"
+            style="-webkit-overflow-scrolling: touch"
           ></div>
           <div id="inventory-container" class="pb-20"></div>
         </div>
 
         <!-- SHOPPING LIST -->
-        <div id="view-shopping" class="view-section hidden space-y-8 fade-in">
+        <div
+          id="view-shopping"
+          class="view-section hidden space-y-8 fade-in ultrawide-container"
+        >
           <header
-            class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-2xl shadow-card border border-slate-100 gap-3 sm:gap-4"
+            class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-3 sm:p-6 rounded-2xl shadow-card border border-slate-100 gap-3"
           >
             <div class="w-full sm:w-auto">
-              <h2 class="text-lg sm:text-xl font-bold text-primary">
+              <h2
+                class="text-base sm:text-xl font-bold text-primary print-title"
+              >
                 Central de Compras
               </h2>
-              <p class="text-text-light text-xs sm:text-sm mt-1">
-                Sincronizado com todos os usuários
-              </p>
+              <p class="text-xs text-slate-400 mt-1 print-subtitle hidden"></p>
             </div>
             <button
-              onclick="window.print()"
-              class="text-slate-500 hover:text-primary bg-slate-50 border border-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 w-full sm:w-auto justify-center"
+              onclick="printShoppingList()"
+              class="text-slate-500 hover:text-primary bg-slate-50 border border-slate-200 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-2 w-full sm:w-auto justify-center no-print"
             >
-              <i class="fas fa-print"></i> Imprimir Lista
+              <i class="fas fa-print"></i> <span>Imprimir</span>
             </button>
           </header>
-          <div id="shopping-grid" class="space-y-4"></div>
+          <div id="shopping-grid" class="space-y-4 print-list"></div>
           <div
             id="empty-state-shopping"
             class="hidden flex flex-col items-center justify-center py-24 text-center"
@@ -601,84 +1129,92 @@
         <!-- HISTORY -->
         <div
           id="view-history"
-          class="view-section hidden space-y-4 sm:space-y-6 fade-in"
+          class="view-section hidden space-y-4 sm:space-y-6 fade-in ultrawide-container"
         >
-          <header>
-            <h2 class="text-xl sm:text-2xl font-bold text-primary">
-              Histórico
+          <header
+            class="bg-white p-3 sm:p-4 rounded-2xl shadow-card border border-slate-100"
+          >
+            <h2 class="text-lg sm:text-2xl font-bold text-primary">
+              Histórico de Movimentações
             </h2>
           </header>
+          <!-- Mobile: Cards View -->
+          <div id="history-cards-mobile" class="space-y-3 sm:hidden"></div>
+          <!-- Desktop: Table View -->
           <div
-            class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden"
+            class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden hidden sm:block"
           >
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-sm min-w-[600px]">
-                <thead
-                  class="bg-slate-50/80 border-b border-slate-100 text-text-light font-semibold uppercase text-xs tracking-wider"
-                >
-                  <tr>
-                    <th class="p-3 sm:p-5">Data</th>
-                    <th class="p-3 sm:p-5">Item</th>
-                    <th class="p-3 sm:p-5 text-center">Tipo</th>
-                    <th class="p-3 sm:p-5 hidden sm:table-cell">Detalhes</th>
-                    <th class="p-3 sm:p-5 text-right">Qtd</th>
-                  </tr>
-                </thead>
-                <tbody
-                  id="history-table-body"
-                  class="divide-y divide-slate-50 text-slate-700"
-                ></tbody>
-              </table>
-            </div>
-            <div
-              id="empty-history"
-              class="p-12 text-center text-text-light hidden"
-            >
-              Nenhum registro.
-            </div>
+            <table class="w-full text-left text-sm">
+              <thead
+                class="bg-slate-50/80 border-b border-slate-100 text-text-light font-semibold uppercase text-xs tracking-wider"
+              >
+                <tr>
+                  <th class="p-4">Data</th>
+                  <th class="p-4">Item</th>
+                  <th class="p-4 text-center">Tipo</th>
+                  <th class="p-4 hidden md:table-cell">Detalhes</th>
+                  <th class="p-4 text-right">Qtd</th>
+                </tr>
+              </thead>
+              <tbody
+                id="history-table-body"
+                class="divide-y divide-slate-50 text-slate-700"
+              ></tbody>
+            </table>
+          </div>
+          <div
+            id="empty-history"
+            class="p-8 sm:p-12 text-center text-text-light hidden bg-white rounded-2xl shadow-card border border-slate-100"
+          >
+            Nenhum registro encontrado.
           </div>
         </div>
 
         <!-- SETTINGS -->
         <div
           id="view-settings"
-          class="view-section hidden space-y-6 sm:space-y-8 fade-in"
+          class="view-section hidden space-y-4 sm:space-y-6 fade-in ultrawide-container"
         >
-          <header>
-            <h2 class="text-xl sm:text-2xl font-bold text-primary">
+          <header
+            class="bg-white p-3 sm:p-4 rounded-2xl shadow-card border border-slate-100"
+          >
+            <h2 class="text-lg sm:text-2xl font-bold text-primary">
               Configurações
             </h2>
           </header>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+          <div class="grid grid-cols-1 gap-4 sm:gap-6">
             <div
-              class="bg-white p-5 sm:p-8 rounded-2xl shadow-card border border-slate-100 md:col-span-2"
+              class="bg-white p-4 sm:p-6 rounded-2xl shadow-card border border-slate-100"
             >
               <div
-                class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6"
+                class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 sm:mb-6"
               >
                 <div>
                   <h3
-                    class="font-bold text-lg text-primary flex items-center gap-2"
+                    class="font-bold text-base sm:text-lg text-primary flex items-center gap-2"
                   >
                     <i class="fas fa-layer-group text-brand"></i> Categorias
                   </h3>
                 </div>
                 <button
                   onclick="openCategoryModal()"
-                  class="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-slate-800 transition shadow-lg shadow-slate-200"
+                  class="bg-slate-900 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm hover:bg-slate-800 transition shadow-lg shadow-slate-200 w-full sm:w-auto justify-center flex items-center gap-2"
                 >
-                  <i class="fas fa-plus mr-2"></i> Nova
+                  <i class="fas fa-plus"></i> <span>Adicionar</span>
                 </button>
               </div>
-              <div class="overflow-hidden rounded-xl border border-slate-100">
-                <table class="w-full text-sm text-left">
+              <div
+                class="overflow-x-auto rounded-xl border border-slate-100"
+                style="-webkit-overflow-scrolling: touch"
+              >
+                <table class="w-full text-sm text-left min-w-[300px]">
                   <thead
                     class="bg-slate-50 text-xs font-bold text-text-light uppercase"
                   >
                     <tr>
-                      <th class="p-4">Nome</th>
-                      <th class="p-4 text-center">Itens</th>
-                      <th class="p-4 text-right">Ações</th>
+                      <th class="p-3 sm:p-4">Nome</th>
+                      <th class="p-3 sm:p-4 text-center">Itens</th>
+                      <th class="p-3 sm:p-4 text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody
@@ -689,35 +1225,45 @@
               </div>
             </div>
             <div
-              class="bg-white p-8 rounded-2xl shadow-card border border-slate-100"
+              class="bg-white p-4 sm:p-6 rounded-2xl shadow-card border border-slate-100"
             >
-              <h3 class="font-bold text-lg text-primary mb-2">
+              <h3 class="font-bold text-base sm:text-lg text-primary mb-2">
                 Status da Nuvem
               </h3>
-              <p class="text-sm text-slate-500 mb-4">
+              <p class="text-xs sm:text-sm text-slate-500 mb-3 sm:mb-4">
                 Seus dados estão seguros nos servidores do Google.
               </p>
               <div
-                class="flex items-center gap-2 text-success font-bold bg-green-50 p-3 rounded-xl border border-green-100"
+                class="flex items-center gap-2 text-success font-bold bg-green-50 p-3 rounded-xl border border-green-100 text-sm"
               >
-                <i class="fas fa-cloud-upload-alt"></i> Sincronizado
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Sincronizado</span>
               </div>
             </div>
           </div>
         </div>
       </div>
+      <!-- Floating back-to-top button (shows while content-area is scrolled) -->
+      <button
+        id="btn-scroll-top"
+        title="Voltar ao Topo"
+        aria-label="Voltar ao Topo"
+        class="hidden fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 bg-primary text-white w-10 h-10 sm:w-11 sm:h-11 rounded-full shadow-lg flex items-center justify-center hover:bg-slate-800 transition-opacity duration-300 opacity-0 pointer-events-none"
+      >
+        <i class="fas fa-arrow-up"></i>
+      </button>
     </main>
 
     <!-- Modals -->
     <div
       id="modal-form"
-      class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4 transition-opacity opacity-0"
+      class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 sm:p-4 transition-opacity opacity-0"
     >
       <div
         class="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-2xl transform scale-95 transition-all flex flex-col max-h-[95vh] sm:max-h-[90vh]"
       >
         <div
-          class="px-4 py-4 sm:px-8 sm:py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-xl sm:rounded-t-2xl"
+          class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-xl sm:rounded-t-2xl"
         >
           <h3
             class="text-lg sm:text-xl font-bold text-primary"
@@ -727,12 +1273,19 @@
           </h3>
           <button
             onclick="closeModal()"
-            class="text-slate-400 hover:text-primary transition bg-white p-2 rounded-full shadow-sm hover:shadow"
+            class="text-slate-400 hover:text-primary transition bg-white px-3 py-2 rounded-full shadow-sm hover:shadow"
           >
             <i class="fas fa-times"></i>
           </button>
         </div>
         <div class="p-4 sm:p-8 overflow-y-auto">
+          <!-- destaque do nome do item (visível apenas em edição) -->
+          <div id="form-item-name-container" class="mb-4 hidden">
+            <p
+              id="form-item-name"
+              class="text-lg font-extrabold text-primary leading-tight"
+            ></p>
+          </div>
           <form
             id="item-form"
             onsubmit="handleFormSubmit(event)"
@@ -746,8 +1299,11 @@
                   >Imagem</label
                 >
                 <div
+                  id="upload-area"
                   class="border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 h-40 sm:h-48 flex flex-col items-center justify-center cursor-pointer hover:border-brand hover:bg-orange-50 transition relative overflow-hidden group"
                   onclick="document.getElementById('fileInput').click()"
+                  role="button"
+                  aria-label="Adicionar imagem: arraste ou clique"
                 >
                   <input
                     type="file"
@@ -766,18 +1322,51 @@
                       <i class="fas fa-camera text-xl"></i>
                     </div>
                     <p class="text-xs text-slate-500 font-medium">
-                      Clique para adicionar
+                      Clique ou arraste uma imagem
                     </p>
                   </div>
+                  <div
+                    id="upload-processing"
+                    class="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-sm gap-3 hidden z-30"
+                  >
+                    <svg
+                      class="animate-spin w-6 h-6"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8z"
+                      ></path>
+                    </svg>
+                    <span>Processando imagem…</span>
+                  </div>
+                  <div
+                    id="upload-info"
+                    class="text-xs text-slate-400 mt-2 hidden z-20 p-2"
+                  ></div>
                   <img
                     id="img-preview"
-                    class="hidden w-full h-full object-contain absolute inset-0 z-10 bg-white p-2"
+                    class="hidden w-full h-full object-contain absolute inset-0 z-10 bg-white p-2 cursor-pointer"
+                    onclick="openImageModal(this.src)"
+                    alt="Preview da imagem selecionada"
                   />
                   <button
                     type="button"
                     id="btn-remove-img"
                     onclick="removeImage(event)"
                     class="hidden absolute top-2 right-2 z-20 bg-white text-error rounded-full w-8 h-8 items-center justify-center shadow-md hover:bg-slate-50 transition"
+                    aria-label="Remover imagem"
                   >
                     <i class="fas fa-trash-alt text-sm"></i>
                   </button>
@@ -849,6 +1438,7 @@
                     ><input
                       type="number"
                       id="inpQty"
+                      placeholder="0"
                       class="w-full bg-transparent font-bold text-lg sm:text-xl text-primary outline-none"
                       required
                       min="0"
@@ -861,6 +1451,7 @@
                     ><input
                       type="number"
                       id="inpMin"
+                      placeholder="1"
                       class="w-full bg-transparent font-bold text-lg sm:text-xl text-error outline-none"
                       required
                       min="1"
@@ -872,20 +1463,22 @@
           </form>
         </div>
         <div
-          class="px-4 py-4 sm:px-8 sm:py-5 bg-slate-50 border-t border-slate-100 flex gap-3 rounded-b-xl sm:rounded-b-2xl"
+          class="px-4 py-3 sm:px-6 sm:py-4 bg-slate-50 border-t border-slate-100 rounded-b-xl sm:rounded-b-2xl"
         >
-          <button
-            onclick="closeModal()"
-            class="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-white hover:border-slate-300 transition shadow-sm"
-          >
-            Cancelar
-          </button>
-          <button
-            onclick="document.getElementById('item-form').requestSubmit()"
-            class="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-slate-800 shadow-lg shadow-slate-200 transition transform active:scale-95"
-          >
-            Salvar
-          </button>
+          <div class="flex flex-col sm:flex-row sm:justify-end gap-3">
+            <button
+              onclick="closeModal()"
+              class="w-full sm:w-auto px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-white hover:border-slate-300 transition shadow-sm"
+            >
+              Cancelar
+            </button>
+            <button
+              onclick="document.getElementById('item-form').requestSubmit()"
+              class="w-full sm:w-auto px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-slate-800 shadow-lg shadow-slate-200 transition transform active:scale-95"
+            >
+              Salvar
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -933,18 +1526,34 @@
 
     <div
       id="modal-receive"
-      class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity opacity-0"
+      class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 sm:p-4 transition-opacity opacity-0"
     >
       <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-sm transform scale-95 transition-all"
+        class="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-2xl transform scale-95 transition-all flex flex-col max-h-[85vh] sm:max-h-[80vh]"
       >
         <div
-          class="p-6 bg-emerald-50 rounded-t-2xl border-b border-emerald-100"
+          class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-xl sm:rounded-t-2xl"
         >
-          <h3 class="text-lg font-bold text-emerald-900">Receber Item</h3>
-          <p class="text-emerald-700 text-sm" id="receive-item-name">Item</p>
+          <h3 class="text-lg sm:text-xl font-bold text-primary">
+            Receber Item
+          </h3>
+          <button
+            onclick="closeReceiveModal()"
+            class="text-slate-400 hover:text-primary transition bg-white px-3 py-2 rounded-full shadow-sm hover:shadow"
+          >
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-        <div class="p-6">
+        <div class="p-4 sm:p-8 overflow-y-auto">
+          <div class="mb-4">
+            <p
+              id="receive-item-name"
+              class="text-lg font-bold text-primary leading-tight"
+            >
+              Item
+            </p>
+          </div>
+
           <form
             id="receive-form"
             onsubmit="handleReceiveSubmit(event)"
@@ -955,51 +1564,62 @@
               <label
                 class="block text-xs font-bold text-text-light uppercase tracking-wide mb-1.5"
                 >Qtd Recebida</label
-              ><input
+              >
+              <input
                 type="number"
                 id="receiveQty"
                 class="w-full px-4 py-3 border border-slate-200 rounded-xl text-lg font-bold text-primary focus:border-success outline-none"
                 required
                 min="1"
               />
-              <p class="text-xs text-slate-400 mt-1">
-                Sugestão:
-                <span id="receive-suggested" class="font-bold">0</span>
-              </p>
-            </div>
-            <div>
-              <label
-                class="block text-xs font-bold text-text-light uppercase tracking-wide mb-1.5"
-                >Custo Un.</label
-              >
-              <div class="relative">
-                <span class="absolute left-4 top-3 text-slate-400 text-sm"
-                  >R$</span
-                ><input
-                  type="number"
-                  id="receiveCost"
-                  step="0.01"
-                  class="w-full pl-10 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:border-success outline-none"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-            <div class="flex gap-3 pt-2">
-              <button
-                type="button"
-                onclick="closeReceiveModal()"
-                class="flex-1 py-3 border border-slate-200 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-50 transition"
-              >
-                Cancelar</button
-              ><button
-                type="submit"
-                class="flex-1 py-3 bg-success text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-200 hover:bg-emerald-600 transition"
-              >
-                Confirmar
-              </button>
+              <!-- sugestão removida da visualização (valor continua pré-preenchido em receiveQty) -->
             </div>
           </form>
         </div>
+
+        <div
+          class="px-4 py-3 sm:px-6 sm:py-4 bg-slate-50 border-t border-slate-100 rounded-b-xl sm:rounded-b-2xl"
+        >
+          <div class="flex flex-col sm:flex-row sm:justify-end gap-3">
+            <button
+              onclick="closeReceiveModal()"
+              class="w-full sm:w-auto px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-white hover:border-slate-300 transition shadow-sm"
+            >
+              Cancelar
+            </button>
+            <button
+              onclick="document.getElementById('receive-form').requestSubmit()"
+              class="w-full sm:w-auto bg-success text-white px-5 py-2.5 rounded-xl shadow-lg hover:bg-emerald-600 transition text-sm font-bold flex items-center gap-2 justify-center"
+            >
+              <i class="fas fa-check"></i>
+              Confirmar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Viewer Modal -->
+    <div
+      id="modal-image"
+      class="fixed inset-0 bg-black/70 z-[100] hidden flex items-center justify-center p-4 transition-opacity opacity-0"
+      onclick="closeImageModal()"
+    >
+      <div
+        class="max-w-4xl max-h-full transform scale-95 transition-all"
+        onclick="event.stopPropagation()"
+      >
+        <img
+          id="modal-image-src"
+          src=""
+          class="max-w-full max-h-[90vh] rounded-lg shadow-2xl"
+        />
+        <button
+          onclick="closeImageModal()"
+          class="absolute top-4 right-4 text-white text-2xl hover:text-slate-200 transition"
+        >
+          &times;
+        </button>
       </div>
     </div>
 
@@ -1052,6 +1672,30 @@
       let viewMode = localStorage.getItem("dd_view_mode") || "grid",
         sortMode = "name_asc",
         categoryChartInstance = null;
+      let quickActionSelectedId = null;
+
+      // app metadata (displayed in sidebar footer)
+      const APP_VERSION = "v1.0.0";
+
+      // Update the compact sidebar footer status
+      function updateSidebarStatus(connected, lastSync = null) {
+        const indicator = document.getElementById("sidebar-sync-indicator");
+        const statusText = document.getElementById("sidebar-status-text");
+        const lastSyncEl = document.getElementById("sidebar-last-sync");
+        const versionEl = document.getElementById("sidebar-version");
+
+        if (indicator) {
+          indicator.classList.toggle("bg-emerald-400", !!connected);
+          indicator.classList.toggle("bg-red-400", !connected);
+        }
+        if (statusText)
+          statusText.textContent = connected ? "Conectado" : "Offline";
+        if (lastSyncEl)
+          lastSyncEl.textContent = lastSync
+            ? new Date(lastSync).toLocaleString("pt-BR")
+            : "—";
+        if (versionEl) versionEl.textContent = APP_VERSION;
+      }
 
       async function initApp() {
         try {
@@ -1063,6 +1707,10 @@
           else await signInAnonymously(auth);
 
           setupRealtimeListeners();
+          // mark connected and set initial last-sync time on successful init
+          try {
+            updateSidebarStatus(true, new Date());
+          } catch (e) {}
           document
             .getElementById("loading-screen")
             .classList.add("opacity-0", "pointer-events-none");
@@ -1090,11 +1738,27 @@
             setActiveTab,
             prepareEdit,
             toggleMobileSidebar,
+            openImageModal,
+            closeImageModal,
+            dashQuickSearch,
+            openQuickItem,
+            printShoppingList,
           });
 
           switchView("dashboard");
+          // initialize floating scroll-to-top behavior
+          try {
+            setupScrollTop();
+          } catch (e) {}
+          try {
+            setupImageUploadUI();
+          } catch (e) {}
         } catch (error) {
           console.error("Auth Err", error);
+          // show offline status if auth/setup failed
+          try {
+            updateSidebarStatus(false, null);
+          } catch (e) {}
         }
       }
 
@@ -1104,6 +1768,9 @@
           (snap) => {
             inventory = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
             renderGlobalUI();
+            try {
+              updateSidebarStatus(true, new Date());
+            } catch (e) {}
           }
         );
         onSnapshot(
@@ -1117,6 +1784,9 @@
             renderCategoryTabs();
             renderCategoryTable();
             updateGlobalCharts();
+            try {
+              updateSidebarStatus(true, new Date());
+            } catch (e) {}
           }
         );
         onSnapshot(
@@ -1126,6 +1796,9 @@
               .map((doc) => ({ id: doc.id, ...doc.data() }))
               .sort((a, b) => new Date(b.date) - new Date(a.date));
             renderHistory();
+            try {
+              updateSidebarStatus(true, new Date());
+            } catch (e) {}
           }
         );
       }
@@ -1215,7 +1888,6 @@
         e.preventDefault();
         const id = document.getElementById("receiveItemId").value;
         const qty = parseInt(document.getElementById("receiveQty").value);
-        const cost = document.getElementById("receiveCost").value;
         const item = inventory.find((i) => i.id === id);
         if (item && qty > 0) {
           try {
@@ -1223,12 +1895,8 @@
               doc(db, "artifacts", appId, "public", "data", "inventory", id),
               { qty: item.qty + qty }
             );
-            logAction(
-              item.name,
-              "Recebimento",
-              qty,
-              cost ? `Custo: R$${cost}` : ""
-            );
+            // registra o recebimento (sem custo) no histórico
+            logAction(item.name, "Recebimento", qty);
             showToast("Recebido!", "success");
             closeReceiveModal();
           } catch (err) {
@@ -1285,13 +1953,14 @@
         });
 
         if (filtered.length === 0) {
-          container.innerHTML = `<div class="py-12 text-center text-text-light flex flex-col items-center"><i class="fas fa-search text-4xl mb-3 text-slate-200"></i><p>Nada encontrado.</p></div>`;
+          container.innerHTML = `<div class="py-12 text-center text-text-light flex flex-col items-center"><i class="fas fa-search text-4xl mb-3 text-slate-200"></i><p>Nenhum Item Encontrado</p></div>`;
           return;
         }
 
         if (viewMode === "grid") {
           let html =
-            '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">';
+            // Mobile: 2 columns, scales up progressively
+            '<div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-8 gap-3 sm:gap-4 md:gap-6">';
           filtered.forEach((item) => {
             const isCrit = item.qty < item.min,
               pct = Math.min(100, (item.qty / (item.min * 2)) * 100),
@@ -1301,91 +1970,198 @@
                 ? "bg-warning"
                 : "bg-success";
             const img = item.image
-              ? `<img src="${item.image}" class="card-img">`
-              : `<div class="flex flex-col items-center justify-center h-full text-slate-300"><i class="fas fa-image text-3xl"></i></div>`;
-            html += `<div class="inventory-card bg-white rounded-2xl shadow-card border border-slate-100 hover:shadow-floating transition-all overflow-hidden flex flex-col group relative ${
+              ? `<img src="${item.image}" loading="lazy" decoding="async" class="card-img">`
+              : `<div class="flex flex-col items-center justify-center h-full text-slate-300"><i class="fas fa-image text-2xl sm:text-3xl"></i></div>`;
+            html += `<div class="inventory-card bg-white rounded-xl sm:rounded-2xl shadow-card border border-slate-100 hover:shadow-floating transition-all overflow-hidden flex flex-col group relative ${
               isCrit ? "ring-2 ring-error" : ""
             }">
-                            <div class="card-img-wrapper">${img}
-                                <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3 backdrop-blur-[2px]">
+                            <div class="card-img-wrapper h-28 sm:h-44">${img}
+                                <div class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2 sm:gap-3 backdrop-blur-[2px]">
                                      <button onclick="prepareEdit('${
                                        item.id
-                                     }')" class="bg-white text-slate-800 w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"><i class="fas fa-pen"></i></button>
+                                     }')" class="bg-white text-slate-800 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"><i class="fas fa-pen text-xs sm:text-sm"></i></button>
                                      <button onclick="deleteItem('${
                                        item.id
-                                     }')" class="bg-white text-error w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"><i class="fas fa-trash"></i></button>
+                                     }')" class="bg-white text-error w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"><i class="fas fa-trash text-xs sm:text-sm"></i></button>
                                 </div>
-                                <div class="absolute top-3 right-3 bg-white/95 px-2 py-1 rounded-lg text-[10px] font-bold shadow-sm text-slate-600">${
+                                <div class="absolute top-2 right-2 sm:top-3 sm:right-3 bg-white/95 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-[8px] sm:text-[10px] font-bold shadow-sm text-slate-600">${
                                   item.category
                                 }</div>
                                 ${
                                   isCrit
-                                    ? '<div class="absolute top-3 left-3 bg-error text-white px-2 py-1 rounded-lg text-[10px] font-bold animate-pulse">Repor</div>'
+                                    ? '<div class="absolute top-2 left-2 sm:top-3 sm:left-3 bg-error text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-[8px] sm:text-[10px] font-bold animate-pulse">Repor</div>'
                                     : ""
                                 }
                             </div>
-                            <div class="p-5 flex-1 flex flex-col"><div class="mb-1"><h4 class="font-bold text-slate-800 text-base leading-tight line-clamp-2" title="${
+                            <div class="p-2.5 sm:p-4 md:p-5 flex-1 flex flex-col"><div class="mb-1"><h4 class="font-bold text-slate-800 text-xs sm:text-sm md:text-base leading-tight line-clamp-2" title="${
                               item.name
                             }">${
               item.name
-            }</h4><p class="text-xs text-slate-400 truncate"><i class="fas fa-truck mr-1"></i>${
+            }</h4><p class="text-[10px] sm:text-xs text-slate-400 truncate mt-0.5 sm:mt-1 hidden sm:block"><i class="fas fa-truck mr-1"></i>${
               item.supplier || "N/A"
             }</p></div>
-                                <div class="flex flex-wrap items-center gap-2 mb-4 mt-2">${
+                                <div class="flex flex-wrap items-center gap-1 sm:gap-2 mb-2 sm:mb-4 mt-1 sm:mt-2">${
                                   item.tag
-                                    ? `<span class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-md font-bold">#${item.tag}</span>`
+                                    ? `<span class="text-[8px] sm:text-[10px] bg-indigo-50 text-indigo-600 px-1.5 sm:px-2 py-0.5 rounded-md font-bold">#${item.tag}</span>`
                                     : ""
                                 }</div>
-                                <div class="mt-auto"><div class="flex justify-between items-end mb-1 text-sm"><span class="text-slate-500 text-xs font-bold uppercase">Estoque</span><span class="text-slate-400 text-xs">Min: ${
+                                <div class="mt-auto"><div class="flex justify-between items-end mb-0.5 sm:mb-1 text-sm"><span class="text-slate-500 text-[9px] sm:text-xs font-bold uppercase">Estoque</span><span class="text-slate-400 text-[9px] sm:text-xs">Min: ${
                                   item.min
                                 }</span></div>
-                                    <div class="flex items-center justify-between mb-2"><span class="text-2xl font-bold ${
+                                    <div class="flex items-center justify-between mb-1.5 sm:mb-2"><span class="text-lg sm:text-xl md:text-2xl font-bold ${
                                       isCrit ? "text-error" : "text-slate-700"
                                     }">${
               item.qty
-            }</span><div class="w-1/2 h-2 bg-slate-100 rounded-full overflow-hidden ml-3"><div class="h-full ${bar}" style="width: ${pct}%"></div></div></div>
-                                    <div class="flex gap-2 mt-3"><button onclick="updateStockDirect('${
+            }</span><div class="w-1/3 sm:w-1/2 h-1.5 sm:h-2 bg-slate-100 rounded-full overflow-hidden ml-2 sm:ml-3"><div class="h-full ${bar}" style="width: ${pct}%"></div></div></div>
+                                    <div class="flex gap-1.5 sm:gap-2 mt-2 sm:mt-3"><button onclick="updateStockDirect('${
                                       item.id
-                                    }', -1)" class="flex-1 h-9 flex items-center justify-center border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500 transition"><i class="fas fa-minus"></i></button><button onclick="updateStockDirect('${
+                                    }', -1)" class="flex-1 h-7 sm:h-9 flex items-center justify-center border border-slate-200 rounded-md sm:rounded-lg hover:bg-slate-50 text-slate-500 transition text-xs sm:text-sm"><i class="fas fa-minus"></i></button><button onclick="updateStockDirect('${
               item.id
-            }', 1)" class="flex-1 h-9 flex items-center justify-center bg-primary text-white rounded-lg hover:bg-slate-800 shadow-md transition"><i class="fas fa-plus"></i></button></div>
+            }', 1)" class="flex-1 h-7 sm:h-9 flex items-center justify-center bg-primary text-white rounded-md sm:rounded-lg hover:bg-slate-800 shadow-md transition text-xs sm:text-sm"><i class="fas fa-plus"></i></button></div>
                                 </div></div></div>`;
           });
           container.innerHTML = html + "</div>";
         } else {
-          let html = `<div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden"><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-text-light font-bold text-xs uppercase"><tr><th class="p-4 w-12"></th><th class="p-4">Item</th><th class="p-4 hidden md:table-cell">Categoria</th><th class="p-4 text-center">Status</th><th class="p-4 text-right">Ações</th></tr></thead><tbody class="divide-y divide-slate-50">`;
+          // List view - Cards on mobile, Table on desktop
+          // Mobile: Card layout
+          let mobileHtml = '<div class="sm:hidden space-y-3">';
+          filtered.forEach((item) => {
+            const isCrit = item.qty < item.min;
+            const img = item.image
+              ? `<img src="${item.image}" loading="lazy" decoding="async" class="w-14 h-14 rounded-lg object-cover">`
+              : `<div class="w-14 h-14 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400"><i class="fas fa-box"></i></div>`;
+            mobileHtml += `<div class="bg-white rounded-xl shadow-card border border-slate-100 p-3 ${
+              isCrit ? "ring-2 ring-error" : ""
+            }">
+              <div class="flex items-center gap-3">
+                ${img}
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-bold text-slate-800 text-sm truncate">${
+                    item.name
+                  }</h4>
+                  <p class="text-[10px] text-slate-400 mt-0.5">${
+                    item.category
+                  }</p>
+                </div>
+                <div class="flex flex-col items-end gap-1">
+                  <span class="text-lg font-bold ${
+                    isCrit ? "text-error" : "text-slate-700"
+                  }">${item.qty}</span>
+                  <div class="flex gap-1">
+                    <button onclick="updateStockDirect('${
+                      item.id
+                    }', -1)" class="w-7 h-7 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs flex items-center justify-center">-</button>
+                    <button onclick="updateStockDirect('${
+                      item.id
+                    }', 1)" class="w-7 h-7 rounded-md bg-primary text-white hover:bg-slate-800 text-xs flex items-center justify-center">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-100">
+                <button onclick="prepareEdit('${
+                  item.id
+                }')" class="text-xs text-blue-600 font-medium flex items-center gap-1"><i class="fas fa-pen"></i> Editar</button>
+                <button onclick="deleteItem('${
+                  item.id
+                }')" class="text-xs text-error font-medium flex items-center gap-1"><i class="fas fa-trash"></i> Excluir</button>
+              </div>
+            </div>`;
+          });
+          mobileHtml += "</div>";
+
+          // Desktop: Table layout
+          let html = `<div class="hidden sm:block bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden"><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-text-light font-bold text-xs uppercase"><tr><th class="p-4 w-20"></th><th class="p-4">Item</th><th class="p-4 hidden md:table-cell">Categoria</th><th class="p-4 text-center">Qtd</th><th class="p-4 text-right">Ações</th></tr></thead><tbody class="divide-y divide-slate-50">`;
           filtered.forEach((item) => {
             const isCrit = item.qty < item.min,
               img = item.image
-                ? `<img src="${item.image}" class="w-10 h-10 rounded object-cover">`
-                : `<div class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center text-slate-400"><i class="fas fa-box"></i></div>`;
-            html += `<tr class="hover:bg-slate-50 transition"><td class="p-4">${img}</td><td class="p-4"><div class="font-bold text-slate-800">${
+                ? `<img src="${item.image}" loading="lazy" decoding="async" class="w-16 h-16 rounded-lg object-contain bg-white">`
+                : `<div class="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400"><i class="fas fa-box"></i></div>`;
+            html += `<tr class="hover:bg-slate-50 transition"><td class="p-4">${img}</td><td class="p-4"><div class="font-bold text-slate-800 text-sm">${
               item.name
-            }</div><div class="text-xs text-slate-400 sm:hidden">${
-              item.category
             }</div></td><td class="p-4 hidden md:table-cell"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs">${
               item.category
             }</span></td><td class="p-4 text-center"><div class="flex items-center justify-center gap-2"><button onclick="updateStockDirect('${
               item.id
-            }', -1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-slate-600">-</button><span class="font-bold w-8 text-center ${
+            }', -1)" class="w-7 h-7 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm flex items-center justify-center">-</button><span class="font-bold w-8 text-center text-base ${
               isCrit ? "text-error" : "text-slate-700"
             }">${item.qty}</span><button onclick="updateStockDirect('${
               item.id
-            }', 1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-slate-600">+</button></div></td><td class="p-4 text-right"><button onclick="prepareEdit('${
+            }', 1)" class="w-7 h-7 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm flex items-center justify-center">+</button></div></td><td class="p-4 text-right whitespace-nowrap"><button onclick="prepareEdit('${
               item.id
             }')" class="text-blue-600 p-2"><i class="fas fa-pen"></i></button><button onclick="deleteItem('${
               item.id
             }')" class="text-error p-2"><i class="fas fa-trash"></i></button></td></tr>`;
           });
-          container.innerHTML = html + "</tbody></table></div>";
+          container.innerHTML = mobileHtml + html + "</tbody></table></div>";
+          // after rendering list mode, adjust the small control buttons for better UX
+          try {
+            styleInventoryListControls();
+          } catch (e) {}
         }
+      }
+
+      // Enhance list view controls after render: resize images already handled in template
+      function styleInventoryListControls() {
+        const container = document.getElementById("inventory-container");
+        if (!container) return;
+        const table = container.querySelector("table");
+        if (!table) return;
+
+        table.querySelectorAll("tbody tr").forEach((tr) => {
+          // status column: buttons and qty
+          const statusTd = tr.querySelector("td:nth-child(4)");
+          if (statusTd) {
+            const controls = Array.from(statusTd.querySelectorAll("button"));
+            controls.forEach((btn) => {
+              const txt = btn.textContent.trim();
+              if (txt === "-") {
+                btn.className =
+                  "w-8 h-8 flex items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 transition";
+                btn.setAttribute("title", "Diminuir 1");
+                btn.setAttribute("aria-label", "Diminuir quantidade");
+              } else if (txt === "+") {
+                btn.className =
+                  "w-8 h-8 flex items-center justify-center rounded-md bg-primary text-white hover:bg-slate-800 transition";
+                btn.setAttribute("title", "Adicionar 1");
+                btn.setAttribute("aria-label", "Adicionar quantidade");
+              }
+            });
+          }
+
+          // actions column: edit / delete buttons
+          const actionsTd = tr.querySelector("td:last-child");
+          if (actionsTd) {
+            const actionButtons = Array.from(
+              actionsTd.querySelectorAll("button")
+            );
+            const editBtn = actionButtons[0];
+            const delBtn = actionButtons[1];
+            if (editBtn) {
+              editBtn.className =
+                "inline-flex items-center justify-center p-2 rounded-md bg-slate-50 hover:bg-slate-100 text-primary mr-2";
+              editBtn.setAttribute("title", "Editar");
+              editBtn.setAttribute("aria-label", "Editar item");
+            }
+            if (delBtn) {
+              delBtn.className =
+                "inline-flex items-center justify-center p-2 rounded-md bg-red-50 hover:bg-red-100 text-error";
+              delBtn.setAttribute("title", "Excluir");
+              delBtn.setAttribute("aria-label", "Excluir item");
+            }
+          }
+        });
       }
 
       function renderShopping() {
         const grid = document.getElementById("shopping-grid");
         const empty = document.getElementById("empty-state-shopping");
         grid.innerHTML = "";
-        const toBuy = inventory.filter((i) => i.qty < i.min);
+        // Items que precisam compra — ordenados A → Z (case-insensitive) para melhor leitura
+        const toBuy = inventory
+          .filter((i) => i.qty < i.min)
+          .sort((a, b) =>
+            a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })
+          );
         if (toBuy.length === 0) {
           empty.classList.remove("hidden");
           return;
@@ -1393,128 +2169,277 @@
         empty.classList.add("hidden");
         toBuy.forEach((item) => {
           const sug = Math.ceil(item.min * 1.5) - item.qty;
-          const img = item.image
-            ? `<img src="${item.image}" class="w-full h-full object-cover">`
-            : '<i class="fas fa-shopping-basket text-xl"></i>';
-          grid.innerHTML += `<div class="bg-white p-5 rounded-xl shadow-card border border-slate-100 flex flex-col md:flex-row items-center gap-6 hover:shadow-md transition relative overflow-hidden">
+          const hasImage = !!item.image;
+          const img = hasImage
+            ? `<img src="${item.image}" loading="lazy" decoding="async" class="w-full h-full object-cover">`
+            : '<i class="fas fa-shopping-basket text-lg sm:text-xl"></i>';
+          const imageClickListener = hasImage
+            ? `onclick="openImageModal('${item.image}')"`
+            : "";
+          const cursorClass = hasImage ? "cursor-pointer" : "";
+          grid.innerHTML += `<div class="bg-white p-3 sm:p-5 rounded-xl shadow-card border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 hover:shadow-md transition relative overflow-hidden">
                         <div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
-                        <div class="w-16 h-16 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center shrink-0 border border-slate-100 overflow-hidden">${img}</div>
-                        <div class="flex-1 text-center md:text-left w-full"><h4 class="font-bold text-slate-800 text-lg">${
-                          item.name
-                        }</h4><div class="text-xs text-text-light mt-1">Fornecedor: ${
-            item.supplier || "-"
-          } • Atual: <span class="font-bold text-error">${
+                        <div class="flex items-center gap-3 sm:gap-4">
+                          <div ${imageClickListener} class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center shrink-0 border border-slate-100 overflow-hidden ${cursorClass}">${img}</div>
+                          <div class="flex-1 min-w-0 sm:hidden">
+                            <h4 class="font-bold text-slate-800 text-sm truncate">${
+                              item.name
+                            }</h4>
+                            <div class="text-[10px] text-text-light mt-0.5">Atual: <span class="font-bold text-error">${
+                              item.qty
+                            }</span> / Mín: ${item.min}</div>
+                          </div>
+                        </div>
+                        <div class="hidden sm:flex flex-1 min-w-0">
+                          <div>
+                            <h4 class="font-bold text-slate-800 text-lg">${
+                              item.name
+                            }</h4>
+                            <div class="text-xs text-text-light mt-1">Fornecedor: ${
+                              item.supplier || "-"
+                            } • Atual: <span class="font-bold text-error">${
             item.qty
-          }</span> / Mín: ${item.min}</div></div>
-                        <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end bg-slate-50 p-3 rounded-xl md:bg-transparent md:p-0"><div class="text-right px-2"><div class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Sugestão</div><div class="text-xl font-bold text-primary">+${sug}</div></div><button onclick="openReceiveModal('${
-            item.id
-          }', ${sug})" class="bg-success text-white px-5 py-2.5 rounded-xl shadow-lg hover:bg-emerald-600 transition text-sm font-bold flex items-center gap-2"><i class="fas fa-check"></i> Receber</button></div></div>`;
+          }</span> / Mín: ${item.min}</div>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-3 sm:gap-4 justify-between bg-slate-50 p-2.5 sm:p-3 rounded-xl sm:bg-transparent sm:p-0">
+                          <div class="text-left sm:text-right">
+                            <div class="text-[9px] sm:text-[10px] uppercase text-slate-400 font-bold tracking-wider">Sugestão</div>
+                            <div class="text-lg sm:text-xl font-bold text-primary">+${sug}</div>
+                          </div>
+                          <button onclick="openReceiveModal('${
+                            item.id
+                          }', ${sug})" class="bg-success text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl shadow-lg hover:bg-emerald-600 transition text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2">
+                            <i class="fas fa-check"></i> <span>Receber</span>
+                          </button>
+                        </div>
+                      </div>`;
         });
       }
 
-      function renderHistory() {
+      function renderHistory(filter = "all") {
         const tbody = document.getElementById("history-table-body"),
-          dashTable = document.getElementById("dash-recent-table");
-        const html = historyLog
+          dashTable = document.getElementById("dash-recent-table"),
+          mobileCards = document.getElementById("history-cards-mobile"),
+          emptyEl = document.getElementById("empty-history");
+
+        // Desktop table HTML
+        const tableHtml = historyLog
           .map((log) => {
             const d = new Date(log.date),
               isPos = log.change > 0;
-            return `<tr class="hover:bg-slate-50"><td class="p-3 sm:p-5 whitespace-nowrap text-slate-500 font-mono text-xs">${d.toLocaleDateString(
+            return `<tr class="hover:bg-slate-50"><td class="p-4 whitespace-nowrap text-slate-500 font-mono text-xs">${d.toLocaleDateString(
               "pt-BR"
             )} ${d.toLocaleTimeString("pt-BR", {
               hour: "2-digit",
               minute: "2-digit",
-            })}</td><td class="p-3 sm:p-5 font-bold text-slate-700 text-xs sm:text-sm">${
+            })}</td><td class="p-4 font-bold text-slate-700 text-sm">${
               log.itemName
-            }</td><td class="p-3 sm:p-5 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${
+            }</td><td class="p-4 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${
               isPos
                 ? "bg-emerald-50 text-success"
                 : "bg-orange-50 text-orange-600"
             }">${
               log.action
-            }</span></td><td class="p-3 sm:p-5 text-xs text-slate-500 hidden sm:table-cell">${
+            }</span></td><td class="p-4 text-xs text-slate-500 hidden md:table-cell">${
               log.details || "-"
-            }</td><td class="p-3 sm:p-5 text-right font-mono font-bold text-sm ${
+            }</td><td class="p-4 text-right font-mono font-bold text-sm ${
               isPos ? "text-success" : "text-error"
             }">${isPos ? "+" : ""}${log.change}</td></tr>`;
           })
           .join("");
+
+        // Mobile cards HTML
+        const cardsHtml = historyLog
+          .map((log) => {
+            const d = new Date(log.date),
+              isPos = log.change > 0;
+            return `<div class="bg-white rounded-xl shadow-card border border-slate-100 p-3">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                  <p class="font-bold text-slate-800 text-sm truncate">${
+                    log.itemName
+                  }</p>
+                  <p class="text-[10px] text-slate-400 mt-0.5">${d.toLocaleDateString(
+                    "pt-BR"
+                  )} às ${d.toLocaleTimeString("pt-BR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}</p>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                    isPos
+                      ? "bg-emerald-50 text-success"
+                      : "bg-orange-50 text-orange-600"
+                  }">${log.action}</span>
+                  <span class="font-mono font-bold text-sm ${
+                    isPos ? "text-success" : "text-error"
+                  }">${isPos ? "+" : ""}${log.change}</span>
+                </div>
+              </div>
+            </div>`;
+          })
+          .join("");
+
         if (tbody)
           tbody.innerHTML =
-            html ||
+            tableHtml ||
             '<tr><td colspan="5" class="p-8 text-center text-slate-400">Vazio</td></tr>';
-        if (dashTable)
+
+        if (mobileCards) mobileCards.innerHTML = cardsHtml || "";
+
+        // Show/hide empty state
+        if (emptyEl) {
+          if (historyLog.length === 0) {
+            emptyEl.classList.remove("hidden");
+          } else {
+            emptyEl.classList.add("hidden");
+          }
+        }
+        if (dashTable) {
           dashTable.innerHTML =
             historyLog
-              .slice(0, 5)
-              .map(
-                (log) =>
-                  `<tr class="hover:bg-slate-50"><td class="p-4 text-xs text-slate-400">${new Date(
-                    log.date
-                  ).toLocaleDateString()}</td><td class="p-4 text-sm font-bold text-slate-700">${
-                    log.itemName
-                  }</td><td class="p-4 text-right text-sm font-bold ${
-                    log.change > 0 ? "text-success" : "text-error"
-                  }">${log.change > 0 ? "+" : ""}${log.change}</td></tr>`
-              )
+              .slice(0, 8)
+              .map((log) => {
+                const isPos = log.change > 0;
+                const time = new Date(log.date).toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+                return `<tr class="hover:bg-slate-50 transition">
+                  <td class="p-4 font-medium text-slate-700 text-sm">
+                    <span class="truncate block">${log.itemName}</span>
+                  </td>
+                  <td class="p-4 text-center"><span class="text-[10px] font-bold uppercase px-2 py-1 rounded ${
+                    isPos
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-orange-50 text-orange-600"
+                  }">${log.action}</span></td>
+                  <td class="p-4 text-right font-bold text-sm ${
+                    isPos ? "text-emerald-600" : "text-orange-600"
+                  }">${isPos ? "+" : ""}${log.change}</td>
+                  <td class="p-4 text-right text-xs text-slate-400">${time}</td>
+               </tr>`;
+              })
               .join("") ||
-            '<tr><td colspan="3" class="p-4 text-center text-xs text-slate-400">Vazio</td></tr>';
+            '<tr><td colspan="4" class="p-6 text-center text-slate-400 text-sm">Nenhuma movimentação recente.</td></tr>';
+        }
+
+        // Dashboard mobile cards
+        const dashCards = document.getElementById("dash-recent-cards");
+        if (dashCards) {
+          dashCards.innerHTML =
+            historyLog
+              .slice(0, 8)
+              .map((log) => {
+                const isPos = log.change > 0;
+                const time = new Date(log.date).toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+                return `<div class="bg-slate-50 rounded-lg p-2.5 flex items-center justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-slate-700 text-xs truncate">${
+                  log.itemName
+                }</p>
+                <p class="text-[10px] text-slate-400">${time}</p>
+              </div>
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                  isPos
+                    ? "bg-emerald-100 text-emerald-600"
+                    : "bg-orange-100 text-orange-600"
+                }">${log.action}</span>
+                <span class="font-mono font-bold text-xs ${
+                  isPos ? "text-emerald-600" : "text-orange-600"
+                }">${isPos ? "+" : ""}${log.change}</span>
+              </div>
+            </div>`;
+              })
+              .join("") ||
+            '<p class="text-center text-slate-400 text-xs py-4">Nenhuma movimentação recente.</p>';
+        }
       }
 
       function updateDashboard() {
         const critical = inventory.filter((i) => i.qty < i.min);
-        document.getElementById("dash-total-items").innerText =
-          inventory.length;
-        document.getElementById(
-          "dash-critical-count"
-        ).innerText = `${critical.length} itens`;
+
+        // Update Date
+        const dateEl = document.getElementById("dash-date-display");
+        if (dateEl)
+          dateEl.innerText = new Date().toLocaleDateString("pt-BR", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          });
+
+        // Metrics
+        const totalEl = document.getElementById("dash-metric-total");
+        if (totalEl) totalEl.innerText = inventory.length;
+
+        const critMetricEl = document.getElementById("dash-metric-critical");
+        if (critMetricEl) critMetricEl.innerText = critical.length;
+
+        const critBadgeEl = document.getElementById("dash-critical-badge");
+        if (critBadgeEl) critBadgeEl.innerText = critical.length;
+
+        // Critical List
         const listEl = document.getElementById("dash-critical-list");
-        if (listEl)
+        if (listEl) {
           listEl.innerHTML =
             critical.length === 0
-              ? '<div class="text-center py-4 text-slate-400 text-sm">Tudo OK!</div>'
+              ? '<div class="text-center py-6 sm:py-8 text-slate-400 text-xs sm:text-sm bg-slate-50 rounded-xl border border-slate-100 border-dashed">Estoque saudável!</div>'
               : critical
-                  .slice(0, 5)
                   .map(
                     (i) =>
-                      `<div class="flex justify-between items-center bg-red-50/50 p-3 rounded-xl border border-red-100 cursor-pointer" onclick="openReceiveModal('${
+                      `<div class="flex justify-between items-center p-2.5 sm:p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition cursor-pointer group" onclick="openReceiveModal('${
                         i.id
-                      }', ${
-                        Math.ceil(i.min * 1.5) - i.qty
-                      })"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-white text-error flex items-center justify-center font-bold text-xs border border-red-100">${
-                        i.qty
-                      }</div><div><p class="text-sm font-bold text-slate-700 truncate w-32">${
-                        i.name
-                      }</p><p class="text-[10px] text-slate-400">Min: ${
-                        i.min
-                      }</p></div></div><i class="fas fa-chevron-right text-xs text-red-300"></i></div>`
+                      }', ${Math.ceil(i.min * 1.5) - i.qty})">
+                      <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-red-50 text-error flex items-center justify-center font-bold text-xs sm:text-sm border border-red-100 group-hover:bg-red-100 transition flex-shrink-0">${
+                            i.qty
+                          }</div>
+                          <div class="min-w-0 flex-1">
+                              <p class="text-xs sm:text-sm font-bold text-slate-700 truncate">${
+                                i.name
+                              }</p>
+                              <p class="text-[9px] sm:text-[10px] text-slate-400">Mínimo: ${
+                                i.min
+                              }</p>
+                          </div>
+                      </div>
+                      <i class="fas fa-chevron-right text-xs text-slate-300 group-hover:text-brand transition ml-2 flex-shrink-0"></i>
+                  </div>`
                   )
                   .join("");
+        }
+
         updateGlobalCharts();
 
-        // Calculate Top Movers
-        const outputMap = {};
-        historyLog.forEach((l) => {
-          if (l.change < 0)
-            outputMap[l.itemName] =
-              (outputMap[l.itemName] || 0) + Math.abs(l.change);
-        });
-        const topMovers = Object.entries(outputMap)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5);
-        const moveEl = document.getElementById("dash-top-movers");
-        if (moveEl)
-          moveEl.innerHTML =
-            topMovers.length === 0
-              ? '<p class="text-center text-xs text-slate-400 py-4">Sem dados</p>'
-              : topMovers
-                  .map(
-                    ([n, c], i) =>
-                      `<div class="flex justify-between py-2 border-b border-slate-50 text-sm"><span class="text-slate-600">#${
-                        i + 1
-                      } ${n}</span><span class="font-bold text-brand">${c}</span></div>`
-                  )
-                  .join("");
+        // Entradas / Saídas do dia (soma de alterações no histórico para hoje)
+        try {
+          const today = new Date();
+          const isSameDay = (d) => {
+            const dd = new Date(d);
+            return (
+              dd.getFullYear() === today.getFullYear() &&
+              dd.getMonth() === today.getMonth() &&
+              dd.getDate() === today.getDate()
+            );
+          };
+          const entriesToday = historyLog
+            .filter((h) => isSameDay(h.date) && h.change > 0)
+            .reduce((s, h) => s + Number(h.change || 0), 0);
+          const exitsToday = historyLog
+            .filter((h) => isSameDay(h.date) && h.change < 0)
+            .reduce((s, h) => s + Math.abs(Number(h.change || 0)), 0);
+
+          const entEl = document.getElementById("dash-metric-entries");
+          const exitEl = document.getElementById("dash-metric-exits");
+          if (entEl) entEl.innerText = entriesToday;
+          if (exitEl) exitEl.innerText = exitsToday;
+        } catch (e) {}
       }
 
       function updateGlobalCharts() {
@@ -1554,7 +2479,210 @@
         });
       }
 
+      function dashQuickSearch(val) {
+        const container = document.getElementById("dash-quick-results");
+        const def = document.getElementById("dash-quick-default");
+        const term = val.toLowerCase().trim();
+
+        if (!term) {
+          container.classList.add("hidden");
+          def.classList.remove("hidden");
+          return;
+        }
+
+        def.classList.add("hidden");
+        container.classList.remove("hidden");
+        // accessibility: mark input expanded
+        const inputEl = document.getElementById("dash-quick-search");
+        if (inputEl) inputEl.setAttribute("aria-expanded", "true");
+
+        const matches = inventory
+          .filter(
+            (i) =>
+              i.name.toLowerCase().includes(term) ||
+              (i.tag && i.tag.toLowerCase().includes(term)) ||
+              (i.category && i.category.toLowerCase().includes(term))
+          )
+          .slice(0, 8);
+
+        if (matches.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-6 px-4">
+              <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 flex items-center justify-center">
+                <i class="fas fa-search text-slate-300 text-lg"></i>
+              </div>
+              <p class="text-sm font-medium text-slate-500">Nenhum Item Encontrado</p>
+              
+            </div>`;
+        } else {
+          container.innerHTML =
+            `
+            <div class="px-3 py-2 bg-slate-50 border-b border-slate-100">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${
+                matches.length
+              } resultado${matches.length > 1 ? "s" : ""}</span>
+            </div>` +
+            matches
+              .map((i) => {
+                const isCrit = i.qty < i.min;
+                const img = i.image
+                  ? `<img src="${i.image}" class="w-11 h-11 rounded-lg object-cover border border-slate-100">`
+                  : `<div class="w-11 h-11 rounded-lg bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center text-slate-400 border border-slate-100"><i class="fas fa-box"></i></div>`;
+                return `<div data-quick-id="${i.id}" role="option" tabindex="0" onclick="openQuickItem('${i.id}')" class="flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors group">
+                ${img}
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-semibold text-slate-800 truncate group-hover:text-blue-700">${i.name}</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">
+                      ${i.category} · ${i.qty} un.
+                    </div>
+                </div>
+                <div class="w-7 h-7 rounded-full bg-slate-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+                  <i class="fas fa-pen text-[10px] text-slate-400 group-hover:text-blue-600"></i>
+                </div>
+            </div>`;
+              })
+              .join("");
+
+          // enable keyboard navigation for results
+          setTimeout(() => {
+            const inputEl2 = document.getElementById("dash-quick-search");
+            const opts = Array.from(
+              container.querySelectorAll('[role="option"]')
+            );
+            // if there are options, ensure input aria-expanded and keyboard events
+            if (inputEl2) {
+              inputEl2.setAttribute(
+                "aria-expanded",
+                opts.length > 0 ? "true" : "false"
+              );
+              inputEl2.onkeydown = function (e) {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  if (opts[0]) opts[0].focus();
+                } else if (e.key === "Escape") {
+                  container.classList.add("hidden");
+                  this.setAttribute("aria-expanded", "false");
+                  def.classList.remove("hidden");
+                }
+              };
+            }
+
+            opts.forEach((opt, idx) => {
+              opt.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  const id = opt.getAttribute("data-quick-id");
+                  if (id) openQuickItem(id);
+                } else if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  const next = opts[idx + 1];
+                  if (next) next.focus();
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  if (idx === 0) {
+                    const iel = document.getElementById("dash-quick-search");
+                    if (iel) iel.focus();
+                  } else {
+                    const prev = opts[idx - 1];
+                    if (prev) prev.focus();
+                  }
+                } else if (e.key === "Escape") {
+                  e.preventDefault();
+                  const iel = document.getElementById("dash-quick-search");
+                  if (iel) {
+                    iel.focus();
+                    iel.setAttribute("aria-expanded", "false");
+                  }
+                  container.classList.add("hidden");
+                  def.classList.remove("hidden");
+                }
+              });
+            });
+          }, 10);
+        }
+      }
+
+      function openQuickItem(id) {
+        // Limpar busca e fechar dropdown
+        const searchEl = document.getElementById("dash-quick-search");
+        if (searchEl) {
+          searchEl.value = "";
+          searchEl.setAttribute("aria-expanded", "false");
+        }
+        document.getElementById("dash-quick-results").classList.add("hidden");
+        document
+          .getElementById("dash-quick-default")
+          .classList.remove("hidden");
+
+        // Abrir modal de edição do item
+        prepareEdit(id);
+      }
+
+      // Função de impressão da lista de compras
+      function printShoppingList() {
+        // Atualizar subtítulo com data
+        const subtitle = document.querySelector(".print-subtitle");
+        if (subtitle) {
+          const now = new Date();
+          subtitle.textContent = `Gerado em ${now.toLocaleDateString(
+            "pt-BR"
+          )} às ${now.toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}`;
+          subtitle.classList.remove("hidden");
+        }
+
+        // Imprimir
+        window.print();
+
+        // Esconder subtítulo após impressão
+        setTimeout(() => {
+          if (subtitle) subtitle.classList.add("hidden");
+        }, 1000);
+      }
+
+      // Fechar dropdown ao clicar fora
+      document.addEventListener("click", function (e) {
+        const searchInput = document.getElementById("dash-quick-search");
+        const resultsContainer = document.getElementById("dash-quick-results");
+        if (searchInput && resultsContainer) {
+          if (
+            !searchInput.contains(e.target) &&
+            !resultsContainer.contains(e.target)
+          ) {
+            resultsContainer.classList.add("hidden");
+            // mark input as collapsed for screen readers
+            try {
+              searchInput.setAttribute("aria-expanded", "false");
+            } catch (e) {}
+            document
+              .getElementById("dash-quick-default")
+              .classList.remove("hidden");
+          }
+        }
+      });
+
       // --- Modals & Utils ---
+      function openImageModal(src) {
+        if (!src) return;
+        document.getElementById("modal-image-src").src = src;
+        const modal = document.getElementById("modal-image");
+        modal.classList.remove("hidden");
+        setTimeout(() => {
+          modal.classList.remove("opacity-0");
+          modal.children[0].classList.remove("scale-95");
+        }, 10);
+      }
+      function closeImageModal() {
+        const modal = document.getElementById("modal-image");
+        modal.classList.add("opacity-0");
+        modal.children[0].classList.add("scale-95");
+        setTimeout(() => {
+          modal.classList.add("hidden");
+          document.getElementById("modal-image-src").src = "";
+        }, 300);
+      }
       function openModal() {
         document.getElementById("modal-form").classList.remove("hidden");
         setTimeout(() => {
@@ -1567,6 +2695,11 @@
           document.getElementById("item-form").reset();
           removeImage({ stopPropagation: () => {} });
           populateCategorySelect();
+          // esconder destaque do nome quando for novo item
+          const formNameContainer = document.getElementById(
+            "form-item-name-container"
+          );
+          if (formNameContainer) formNameContainer.classList.add("hidden");
         }
       }
       function closeModal() {
@@ -1574,6 +2707,10 @@
         setTimeout(() => {
           document.getElementById("modal-form").classList.add("hidden");
           document.getElementById("editItemId").value = "";
+          const formNameContainer = document.getElementById(
+            "form-item-name-container"
+          );
+          if (formNameContainer) formNameContainer.classList.add("hidden");
         }, 200);
       }
       function openReceiveModal(id, sug) {
@@ -1581,9 +2718,9 @@
         if (!item) return;
         document.getElementById("receiveItemId").value = id;
         document.getElementById("receive-item-name").innerText = item.name;
+        // preenche a quantidade sugerida no campo (visível apenas como valor)
         document.getElementById("receiveQty").value = sug;
-        document.getElementById("receive-suggested").innerText = sug;
-        document.getElementById("receiveCost").value = "";
+        // antes havia um campo de custo aqui — removido por simplificação
         document.getElementById("modal-receive").classList.remove("hidden");
         setTimeout(
           () =>
@@ -1638,6 +2775,13 @@
           document.getElementById("img-preview").classList.remove("hidden");
           document.getElementById("upload-placeholder").classList.add("hidden");
         } else removeImage({ stopPropagation: () => {} });
+        // mostrar destaque do nome no modal de edição
+        const formNameEl = document.getElementById("form-item-name");
+        const formNameContainer = document.getElementById(
+          "form-item-name-container"
+        );
+        if (formNameEl) formNameEl.innerText = item.name;
+        if (formNameContainer) formNameContainer.classList.remove("hidden");
         openModal();
       }
       function populateCategorySelect() {
@@ -1647,13 +2791,13 @@
       }
       function renderCategoryTabs() {
         document.getElementById("category-tabs-container").innerHTML =
-          `<button onclick="setActiveTab('Todas')" class="tab-btn px-4 py-3 text-sm font-medium ${
+          `<button onclick="setActiveTab('Todas')" class="tab-btn px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium whitespace-nowrap ${
             activeTab === "Todas" ? "active" : ""
           }">Todas</button>` +
           categories
             .map(
               (c) =>
-                `<button onclick="setActiveTab('${c}')" class="tab-btn px-4 py-3 text-sm font-medium ${
+                `<button onclick="setActiveTab('${c}')" class="tab-btn px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium whitespace-nowrap ${
                   activeTab === c ? "active" : ""
                 }">${c}</button>`
             )
@@ -1665,9 +2809,9 @@
           tbody.innerHTML = categories
             .map(
               (c) =>
-                `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${c}</td><td class="p-4 text-center text-slate-500">${
+                `<tr class="hover:bg-slate-50"><td class="p-3 sm:p-4 font-medium text-sm">${c}</td><td class="p-3 sm:p-4 text-center text-slate-500 text-sm">${
                   inventory.filter((i) => i.category === c).length
-                }</td><td class="p-4 text-right"><button onclick="deleteCategory('${c}')" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`
+                }</td><td class="p-3 sm:p-4 text-right"><button onclick="deleteCategory('${c}')" class="text-red-500 p-1"><i class="fas fa-trash"></i></button></td></tr>`
             )
             .join("");
       }
@@ -1699,39 +2843,72 @@
         }, 3000);
       }
       function processImage(input) {
-        if (input.files && input.files[0]) {
-          const r = new FileReader();
-          r.onload = function (e) {
-            const img = new Image();
-            img.src = e.target.result;
-            img.onload = function () {
-              const c = document.createElement("canvas"),
-                MAX = 500,
-                scale = MAX / img.width;
-              c.width = MAX;
-              c.height = img.height * scale;
-              const ctx = c.getContext("2d");
-              ctx.drawImage(img, 0, 0, c.width, c.height);
-              const d = c.toDataURL("image/jpeg", 0.8);
-              document.getElementById("imgBase64").value = d;
-              document.getElementById("img-preview").src = d;
-              document.getElementById("img-preview").classList.remove("hidden");
-              document
-                .getElementById("upload-placeholder")
-                .classList.add("hidden");
-            };
+        // accepts an <input> element or a File object
+        let file = null;
+        if (input instanceof File) file = input;
+        else if (input && input.files && input.files[0]) file = input.files[0];
+        if (!file) return;
+
+        const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+        if (!file.type.startsWith("image/"))
+          return showToast("Formato não suportado", "default");
+        if (file.size > MAX_SIZE)
+          return showToast("Arquivo muito grande — limite 5MB", "default");
+
+        const area = document.getElementById("upload-area");
+        const processing = document.getElementById("upload-processing");
+        const info = document.getElementById("upload-info");
+        const placeholder = document.getElementById("upload-placeholder");
+        const preview = document.getElementById("img-preview");
+        const removeBtn = document.getElementById("btn-remove-img");
+
+        if (processing) processing.classList.remove("hidden");
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = function () {
+            // resize image client-side for consistent sizes (max width)
+            const c = document.createElement("canvas"),
+              MAX = 1000;
+            const scale = img.width > MAX ? MAX / img.width : 1;
+            c.width = img.width * scale;
+            c.height = img.height * scale;
+            const ctx = c.getContext("2d");
+            ctx.drawImage(img, 0, 0, c.width, c.height);
+            const d = c.toDataURL("image/jpeg", 0.8);
+
+            // set hidden field and preview
+            document.getElementById("imgBase64").value = d;
+            preview.src = d;
+            preview.classList.remove("hidden");
+            preview.setAttribute("alt", file.name);
+            if (placeholder) placeholder.classList.add("hidden");
+            if (info)
+              info.innerText = `${file.name} — ${Math.round(
+                file.size / 1024
+              )} KB`;
+            if (info) info.classList.remove("hidden");
+            if (removeBtn) removeBtn.classList.remove("hidden");
+            if (processing) processing.classList.add("hidden");
           };
-          r.readAsDataURL(input.files[0]);
-        }
+        };
+        reader.readAsDataURL(file);
       }
       function removeImage(e) {
-        e.stopPropagation();
-        document.getElementById("fileInput").value = "";
+        if (e && e.stopPropagation) e.stopPropagation();
+        const fileEl = document.getElementById("fileInput");
+        const preview = document.getElementById("img-preview");
+        const info = document.getElementById("upload-info");
+        const placeholder = document.getElementById("upload-placeholder");
+        const removeBtn = document.getElementById("btn-remove-img");
+        if (fileEl) fileEl.value = "";
         document.getElementById("imgBase64").value = "";
-        document.getElementById("img-preview").classList.add("hidden");
-        document
-          .getElementById("upload-placeholder")
-          .classList.remove("hidden");
+        if (preview) preview.classList.add("hidden");
+        if (info) info.classList.add("hidden");
+        if (placeholder) placeholder.classList.remove("hidden");
+        if (removeBtn) removeBtn.classList.add("hidden");
       }
       function toggleMobileSidebar() {
         const sidebar = document.getElementById("main-sidebar");
@@ -1766,6 +2943,77 @@
         if (v === "shopping") renderShopping();
         if (v === "history") renderHistory();
         updateGlobalUI();
+      }
+
+      // Floating back-to-top button setup
+      function setupScrollTop() {
+        const container = document.getElementById("content-area");
+        const btn = document.getElementById("btn-scroll-top");
+        if (!container || !btn) return;
+
+        // helper show/hide with transition
+        const show = () => {
+          btn.classList.remove("hidden");
+          // allow the DOM to apply before removing opacity for transition
+          setTimeout(() => {
+            btn.classList.remove("opacity-0", "pointer-events-none");
+            btn.classList.add("opacity-100");
+          }, 10);
+        };
+        const hide = () => {
+          btn.classList.remove("opacity-100");
+          btn.classList.add("opacity-0", "pointer-events-none");
+          setTimeout(() => btn.classList.add("hidden"), 300);
+        };
+
+        // initial state
+        btn.classList.add("hidden", "opacity-0", "pointer-events-none");
+
+        container.addEventListener("scroll", () => {
+          if (container.scrollTop > 300) show();
+          else hide();
+        });
+
+        // also support clicking the button to scroll up
+        btn.addEventListener("click", () => {
+          container.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      }
+      // Setup drag-and-drop + keyboard accessibility for image upload area
+      function setupImageUploadUI() {
+        const area = document.getElementById("upload-area");
+        const input = document.getElementById("fileInput");
+        if (!area || !input) return;
+
+        const highlight = () =>
+          area.classList.add("ring-2", "ring-brand", "border-brand");
+        const unhighlight = () =>
+          area.classList.remove("ring-2", "ring-brand", "border-brand");
+
+        area.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          highlight();
+        });
+        area.addEventListener("dragleave", (e) => {
+          e.preventDefault();
+          unhighlight();
+        });
+        area.addEventListener("drop", (e) => {
+          e.preventDefault();
+          unhighlight();
+          const file = e.dataTransfer.files && e.dataTransfer.files[0];
+          if (file) processImage(file);
+        });
+
+        // Make sure keyboard users can focus and trigger file select
+        area.setAttribute("tabindex", "0");
+        area.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            input.click();
+          }
+        });
       }
       function updateGlobalUI() {
         const c = inventory.filter((i) => i.qty < i.min).length;
