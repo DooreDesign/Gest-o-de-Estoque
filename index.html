@@ -306,6 +306,54 @@
         width: 100%;
       }
 
+      /* ========== ESTILOS LISTA DE COMPRAS ========== */
+      /* Controles de pesquisa e filtros */
+      #view-shopping header .no-print {
+        display: block;
+      }
+
+      @media print {
+        #view-shopping header .no-print {
+          display: none !important;
+        }
+      }
+
+      /* Item em trânsito - estilo visual */
+      .shopping-item-in-transit {
+        border-left: 4px solid #3b82f6 !important;
+        background: linear-gradient(to right, #eff6ff 0%, #ffffff 10%) !important;
+      }
+
+      .shopping-item-in-transit .absolute.left-0 {
+        background-color: #3b82f6 !important;
+      }
+
+      /* Badge "Em Trânsito" */
+      .shopping-item-in-transit [class*="bg-blue-50"] {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.8;
+        }
+      }
+
+      /* Responsividade dos filtros */
+      @media (max-width: 640px) {
+        #view-shopping header .flex-col.gap-2 {
+          gap: 0.75rem;
+        }
+        
+        #view-shopping header select,
+        #view-shopping header input {
+          font-size: 0.875rem;
+        }
+      }
+
       /* ========== ESTILOS DE IMPRESSÃO ========== */
       @media print {
         @page {
@@ -402,6 +450,16 @@
 
         /* Esconder botão de imprimir */
         #view-shopping > header button {
+          display: none !important;
+        }
+
+        /* Ocultar itens em trânsito na impressão */
+        .shopping-item-in-transit {
+          display: none !important;
+        }
+
+        /* Ocultar itens marcados para não imprimir */
+        .print-hidden {
           display: none !important;
         }
 
@@ -553,6 +611,11 @@
 
         /* Estado vazio - ocultar */
         #empty-state-shopping {
+          display: none !important;
+        }
+
+        /* Ocultar itens em trânsito na impressão */
+        .shopping-item-in-transit {
           display: none !important;
         }
 
@@ -1095,22 +1158,78 @@
           class="view-section hidden space-y-8 fade-in ultrawide-container"
         >
           <header
-            class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-3 sm:p-6 rounded-2xl shadow-card border border-slate-100 gap-3"
+            class="flex flex-col gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-2xl shadow-card border border-slate-100"
           >
-            <div class="w-full sm:w-auto">
+            <div class="flex justify-between items-center">
               <h2
-                class="text-base sm:text-xl font-bold text-primary print-title"
+                class="text-lg sm:text-2xl font-bold text-primary print-title"
               >
                 Central de Compras
               </h2>
-              <p class="text-xs text-slate-400 mt-1 print-subtitle hidden"></p>
+              <button
+                onclick="printShoppingList()"
+                class="text-slate-500 hover:text-primary bg-slate-50 border border-slate-200 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-2 no-print"
+              >
+                <i class="fas fa-print"></i> <span>Imprimir</span>
+              </button>
             </div>
-            <button
-              onclick="printShoppingList()"
-              class="text-slate-500 hover:text-primary bg-slate-50 border border-slate-200 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-2 w-full sm:w-auto justify-center no-print"
-            >
-              <i class="fas fa-print"></i> <span>Imprimir</span>
-            </button>
+            <div class="no-print">
+              <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full items-stretch sm:items-center">
+                <div class="relative flex-1 group w-full sm:w-auto">
+                  <input
+                    type="text"
+                    id="shopping-search-input"
+                    onkeyup="renderShopping()"
+                    placeholder="Buscar..."
+                    class="w-full h-10 pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand focus:ring-4 focus:ring-brand/10 outline-none text-sm transition shadow-sm bg-white"
+                  />
+                  <i
+                    class="fas fa-search absolute left-4 top-3 text-slate-400 group-focus-within:text-brand transition-colors"
+                  ></i>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:flex-shrink-0">
+                  <div class="relative w-full sm:w-auto">
+                    <select
+                      id="shopping-filter-category"
+                      onchange="renderShopping()"
+                      class="h-10 w-full sm:w-auto sm:min-w-[160px] pl-3 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 focus:border-brand outline-none appearance-none cursor-pointer hover:bg-slate-50"
+                    >
+                      <option value="">Todas as Categorias</option>
+                    </select>
+                    <i
+                      class="fas fa-chevron-down absolute right-3 top-3.5 text-slate-400 pointer-events-none text-xs"
+                    ></i>
+                  </div>
+                  <div class="relative w-full sm:w-auto">
+                    <select
+                      id="shopping-filter-supplier"
+                      onchange="renderShopping()"
+                      class="h-10 w-full sm:w-auto sm:min-w-[160px] pl-3 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 focus:border-brand outline-none appearance-none cursor-pointer hover:bg-slate-50"
+                    >
+                      <option value="">Todos os Fornecedores</option>
+                    </select>
+                    <i
+                      class="fas fa-chevron-down absolute right-3 top-3.5 text-slate-400 pointer-events-none text-xs"
+                    ></i>
+                  </div>
+                  <div class="relative w-full sm:w-auto">
+                    <select
+                      id="shopping-filter-status"
+                      onchange="renderShopping()"
+                      class="h-10 w-full sm:w-auto sm:min-w-[140px] pl-3 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-600 focus:border-brand outline-none appearance-none cursor-pointer hover:bg-slate-50"
+                    >
+                      <option value="all">Todos</option>
+                      <option value="pending">Pendentes</option>
+                      <option value="inTransit">Em Trânsito</option>
+                    </select>
+                    <i
+                      class="fas fa-chevron-down absolute right-3 top-3.5 text-slate-400 pointer-events-none text-xs"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-slate-400 mt-1 print-subtitle hidden"></p>
           </header>
           <div id="shopping-grid" class="space-y-4 print-list"></div>
           <div
@@ -1728,6 +1847,7 @@
             toggleViewMode,
             changeSort,
             renderInventory,
+            renderShopping,
             openCategoryModal,
             closeCategoryModal,
             handleCategorySubmit,
@@ -1743,6 +1863,7 @@
             dashQuickSearch,
             openQuickItem,
             printShoppingList,
+            toggleInTransit,
           });
 
           switchView("dashboard");
@@ -1833,11 +1954,21 @@
         };
         try {
           if (id) {
+            // Buscar item antigo para calcular diferença
+            const oldItem = inventory.find((i) => i.id === id);
+            const oldQty = oldItem ? oldItem.qty : 0;
+            const qtyChange = data.qty - oldQty;
+            
             await updateDoc(
               doc(db, "artifacts", appId, "public", "data", "inventory", id),
               data
             );
-            logAction(data.name, "Edição", 0);
+            
+            // Registrar edição com a diferença de quantidade
+            const details = qtyChange !== 0 
+              ? `De ${oldQty} para ${data.qty}` 
+              : "Sem alteração de quantidade";
+            logAction(data.name, "Edição", qtyChange, details);
             showToast("Item atualizado!", "success");
           } else {
             data.createdAt = new Date().toISOString();
@@ -1891,9 +2022,10 @@
         const item = inventory.find((i) => i.id === id);
         if (item && qty > 0) {
           try {
+            // Resetar inTransit quando o item é recebido
             await updateDoc(
               doc(db, "artifacts", appId, "public", "data", "inventory", id),
-              { qty: item.qty + qty }
+              { qty: item.qty + qty, inTransit: false }
             );
             // registra o recebimento (sem custo) no histórico
             logAction(item.name, "Recebimento", qty);
@@ -1902,6 +2034,24 @@
           } catch (err) {
             alert("Erro ao receber");
           }
+        }
+      }
+
+      async function toggleInTransit(itemId) {
+        const item = inventory.find((i) => i.id === itemId);
+        if (!item) return;
+        try {
+          const newInTransit = !(item.inTransit || false);
+          await updateDoc(
+            doc(db, "artifacts", appId, "public", "data", "inventory", itemId),
+            { inTransit: newInTransit }
+          );
+          showToast(
+            newInTransit ? "Marcado como em trânsito" : "Removido de trânsito",
+            "success"
+          );
+        } catch (err) {
+          alert("Erro ao atualizar status");
         }
       }
 
@@ -1982,7 +2132,7 @@
                                      }')" class="bg-white text-slate-800 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"><i class="fas fa-pen text-xs sm:text-sm"></i></button>
                                      <button onclick="deleteItem('${
                                        item.id
-                                     }')" class="bg-white text-error w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition"><i class="fas fa-trash text-xs sm:text-sm"></i></button>
+                                     }')" class="hidden sm:flex bg-white text-error w-8 h-8 sm:w-10 sm:h-10 rounded-full items-center justify-center shadow-lg hover:scale-110 transition"><i class="fas fa-trash text-xs sm:text-sm"></i></button>
                                 </div>
                                 <div class="absolute top-2 right-2 sm:top-3 sm:right-3 bg-white/95 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-[8px] sm:text-[10px] font-bold shadow-sm text-slate-600">${
                                   item.category
@@ -2061,9 +2211,6 @@
                 <button onclick="prepareEdit('${
                   item.id
                 }')" class="text-xs text-blue-600 font-medium flex items-center gap-1"><i class="fas fa-pen"></i> Editar</button>
-                <button onclick="deleteItem('${
-                  item.id
-                }')" class="text-xs text-error font-medium flex items-center gap-1"><i class="fas fa-trash"></i> Excluir</button>
               </div>
             </div>`;
           });
@@ -2155,21 +2302,136 @@
       function renderShopping() {
         const grid = document.getElementById("shopping-grid");
         const empty = document.getElementById("empty-state-shopping");
+        if (!grid || !empty) return;
+        
         grid.innerHTML = "";
-        // Items que precisam compra — ordenados A → Z (case-insensitive) para melhor leitura
-        const toBuy = inventory
-          .filter((i) => i.qty < i.min)
-          .sort((a, b) =>
-            a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })
+
+        // Obter valores dos filtros e pesquisa ANTES de repopular dropdowns
+        const searchTerm = (
+          document.getElementById("shopping-search-input")?.value || ""
+        ).toLowerCase();
+        const categorySelect = document.getElementById("shopping-filter-category");
+        const supplierSelect = document.getElementById("shopping-filter-supplier");
+        const statusSelect = document.getElementById("shopping-filter-status");
+        
+        // Capturar valores ANTES de modificar os selects
+        const filterCategory = categorySelect?.value || "";
+        const filterSupplier = supplierSelect?.value || "";
+        const filterStatus = statusSelect?.value || "all";
+
+        // Popular dropdowns de categoria e fornecedor (preservando valores selecionados)
+        let finalCategory = filterCategory;
+        let finalSupplier = filterSupplier;
+        
+        if (categorySelect) {
+          const uniqueCategories = [
+            ...new Set(
+              inventory
+                .filter((i) => i.qty < i.min && i.category)
+                .map((i) => i.category)
+            ),
+          ].sort();
+          
+          // Verificar se a categoria selecionada ainda existe
+          if (filterCategory && !uniqueCategories.includes(filterCategory)) {
+            finalCategory = "";
+          }
+          
+          categorySelect.innerHTML =
+            '<option value="">Todas as Categorias</option>' +
+            uniqueCategories
+              .map(
+                (cat) =>
+                  `<option value="${cat}" ${
+                    cat === finalCategory ? "selected" : ""
+                  }>${cat}</option>`
+              )
+              .join("");
+          
+          // Garantir que o valor seja definido corretamente
+          categorySelect.value = finalCategory;
+        }
+
+        if (supplierSelect) {
+          const uniqueSuppliers = [
+            ...new Set(
+              inventory
+                .filter((i) => i.qty < i.min && i.supplier)
+                .map((i) => i.supplier)
+            ),
+          ].sort();
+          
+          // Verificar se o fornecedor selecionado ainda existe
+          if (filterSupplier && !uniqueSuppliers.includes(filterSupplier)) {
+            finalSupplier = "";
+          }
+          
+          supplierSelect.innerHTML =
+            '<option value="">Todos os Fornecedores</option>' +
+            uniqueSuppliers
+              .map(
+                (sup) =>
+                  `<option value="${sup}" ${
+                    sup === finalSupplier ? "selected" : ""
+                  }>${sup}</option>`
+              )
+              .join("");
+          
+          // Garantir que o valor seja definido corretamente
+          supplierSelect.value = finalSupplier;
+        }
+
+        // Usar os valores finais (já validados)
+        const finalStatus = filterStatus;
+
+        // Filtrar itens que precisam compra
+        let toBuy = inventory.filter((i) => i.qty < i.min);
+
+        // Aplicar filtro de status
+        if (finalStatus === "pending") {
+          toBuy = toBuy.filter((i) => !(i.inTransit || false));
+        } else if (finalStatus === "inTransit") {
+          toBuy = toBuy.filter((i) => i.inTransit === true);
+        }
+
+        // Aplicar filtro de categoria
+        if (finalCategory) {
+          toBuy = toBuy.filter((i) => i.category === finalCategory);
+        }
+
+        // Aplicar filtro de fornecedor
+        if (finalSupplier) {
+          toBuy = toBuy.filter((i) => i.supplier === finalSupplier);
+        }
+
+        // Aplicar pesquisa
+        if (searchTerm) {
+          toBuy = toBuy.filter(
+            (i) =>
+              i.name.toLowerCase().includes(searchTerm) ||
+              (i.category && i.category.toLowerCase().includes(searchTerm)) ||
+              (i.supplier && i.supplier.toLowerCase().includes(searchTerm)) ||
+              (i.tag && i.tag.toLowerCase().includes(searchTerm))
           );
+        }
+
+        // Ordenar A → Z
+        toBuy.sort((a, b) =>
+          a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" })
+        );
+
         if (toBuy.length === 0) {
           empty.classList.remove("hidden");
+          grid.classList.add("hidden");
           return;
         }
         empty.classList.add("hidden");
+        grid.classList.remove("hidden");
+
         toBuy.forEach((item) => {
           const sug = Math.ceil(item.min * 1.5) - item.qty;
           const hasImage = !!item.image;
+          const isInTransit = item.inTransit || false;
           const img = hasImage
             ? `<img src="${item.image}" loading="lazy" decoding="async" class="w-full h-full object-cover">`
             : '<i class="fas fa-shopping-basket text-lg sm:text-xl"></i>';
@@ -2177,24 +2439,37 @@
             ? `onclick="openImageModal('${item.image}')"`
             : "";
           const cursorClass = hasImage ? "cursor-pointer" : "";
-          grid.innerHTML += `<div class="bg-white p-3 sm:p-5 rounded-xl shadow-card border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 hover:shadow-md transition relative overflow-hidden">
-                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
+          
+          // Estilo visual para itens em trânsito
+          const borderColor = isInTransit ? "bg-blue-500" : "bg-error";
+          const transitBadge = isInTransit
+            ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold uppercase"><i class="fas fa-truck"></i> Em Trânsito</span>'
+            : "";
+          
+          grid.innerHTML += `<div class="shopping-item bg-white p-3 sm:p-5 rounded-xl shadow-card border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 hover:shadow-md transition relative overflow-hidden ${isInTransit ? "shopping-item-in-transit" : ""}">
+                        <div class="absolute left-0 top-0 bottom-0 w-1 ${borderColor}"></div>
                         <div class="flex items-center gap-3 sm:gap-4">
                           <div ${imageClickListener} class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center shrink-0 border border-slate-100 overflow-hidden ${cursorClass}">${img}</div>
                           <div class="flex-1 min-w-0 sm:hidden">
                             <h4 class="font-bold text-slate-800 text-sm truncate">${
                               item.name
                             }</h4>
-                            <div class="text-[10px] text-text-light mt-0.5">Atual: <span class="font-bold text-error">${
-                              item.qty
-                            }</span> / Mín: ${item.min}</div>
+                            <div class="text-[10px] text-text-light mt-0.5 flex items-center gap-2">
+                              <span>Atual: <span class="font-bold text-error">${
+                                item.qty
+                              }</span> / Mín: ${item.min}</span>
+                              ${transitBadge}
+                            </div>
                           </div>
                         </div>
                         <div class="hidden sm:flex flex-1 min-w-0">
                           <div>
-                            <h4 class="font-bold text-slate-800 text-lg">${
-                              item.name
-                            }</h4>
+                            <div class="flex items-center gap-2 mb-1">
+                              <h4 class="font-bold text-slate-800 text-lg">${
+                                item.name
+                              }</h4>
+                              ${transitBadge}
+                            </div>
                             <div class="text-xs text-text-light mt-1">Fornecedor: ${
                               item.supplier || "-"
                             } • Atual: <span class="font-bold text-error">${
@@ -2207,11 +2482,18 @@
                             <div class="text-[9px] sm:text-[10px] uppercase text-slate-400 font-bold tracking-wider">Sugestão</div>
                             <div class="text-lg sm:text-xl font-bold text-primary">+${sug}</div>
                           </div>
-                          <button onclick="openReceiveModal('${
-                            item.id
-                          }', ${sug})" class="bg-success text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl shadow-lg hover:bg-emerald-600 transition text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2">
-                            <i class="fas fa-check"></i> <span>Receber</span>
-                          </button>
+                          <div class="flex items-center gap-2">
+                            <button onclick="toggleInTransit('${
+                              item.id
+                            }')" class="no-print ${isInTransit ? "bg-blue-500 hover:bg-blue-600 text-white" : "bg-slate-200 hover:bg-slate-300 text-slate-600"} px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl shadow-sm transition text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2" title="${isInTransit ? "Remover de trânsito" : "Marcar como em trânsito"}">
+                              <i class="fas fa-${isInTransit ? "check" : "truck"}"></i> <span class="hidden sm:inline">${isInTransit ? "Em Trânsito" : "Trânsito"}</span>
+                            </button>
+                            <button onclick="openReceiveModal('${
+                              item.id
+                            }', ${sug})" class="bg-success text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl shadow-lg hover:bg-emerald-600 transition text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2">
+                              <i class="fas fa-check"></i> <span>Receber</span>
+                            </button>
+                          </div>
                         </div>
                       </div>`;
         });
@@ -2621,7 +2903,7 @@
       // Função de impressão da lista de compras
       function printShoppingList() {
         // Atualizar subtítulo com data
-        const subtitle = document.querySelector(".print-subtitle");
+        const subtitle = document.querySelector("#view-shopping .print-subtitle");
         if (subtitle) {
           const now = new Date();
           subtitle.textContent = `Gerado em ${now.toLocaleDateString(
@@ -2633,11 +2915,45 @@
           subtitle.classList.remove("hidden");
         }
 
+        // Obter todos os itens atualmente visíveis no grid (já filtrados)
+        const grid = document.getElementById("shopping-grid");
+        const allItems = grid ? Array.from(grid.querySelectorAll(".shopping-item")) : [];
+        const itemsToHide = [];
+        
+        // Ocultar itens em trânsito e garantir que apenas os visíveis sejam impressos
+        allItems.forEach((item) => {
+          // Ocultar itens em trânsito da impressão
+          if (item.classList.contains("shopping-item-in-transit")) {
+            if (!item.classList.contains("print-hidden")) {
+              item.classList.add("print-hidden");
+              itemsToHide.push(item);
+            }
+          }
+        });
+
+        // Adicionar classe CSS para ocultar itens marcados na impressão
+        if (!document.getElementById("print-shopping-style")) {
+          const style = document.createElement("style");
+          style.id = "print-shopping-style";
+          style.textContent = `
+            @media print {
+              .print-hidden {
+                display: none !important;
+              }
+            }
+          `;
+          document.head.appendChild(style);
+        }
+
         // Imprimir
         window.print();
 
-        // Esconder subtítulo após impressão
+        // Restaurar itens após impressão
         setTimeout(() => {
+          itemsToHide.forEach((item) => {
+            item.classList.remove("print-hidden");
+          });
+          // Esconder subtítulo após impressão
           if (subtitle) subtitle.classList.add("hidden");
         }, 1000);
       }
