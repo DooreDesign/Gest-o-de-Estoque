@@ -321,7 +321,11 @@
       /* Item em trânsito - estilo visual */
       .shopping-item-in-transit {
         border-left: 4px solid #3b82f6 !important;
-        background: linear-gradient(to right, #eff6ff 0%, #ffffff 10%) !important;
+        background: linear-gradient(
+          to right,
+          #eff6ff 0%,
+          #ffffff 10%
+        ) !important;
       }
 
       .shopping-item-in-transit .absolute.left-0 {
@@ -334,7 +338,8 @@
       }
 
       @keyframes pulse {
-        0%, 100% {
+        0%,
+        100% {
           opacity: 1;
         }
         50% {
@@ -347,7 +352,7 @@
         #view-shopping header .flex-col.gap-2 {
           gap: 0.75rem;
         }
-        
+
         #view-shopping header select,
         #view-shopping header input {
           font-size: 0.875rem;
@@ -1174,7 +1179,9 @@
               </button>
             </div>
             <div class="no-print">
-              <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full items-stretch sm:items-center">
+              <div
+                class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full items-stretch sm:items-center"
+              >
                 <div class="relative flex-1 group w-full sm:w-auto">
                   <input
                     type="text"
@@ -1187,7 +1194,9 @@
                     class="fas fa-search absolute left-4 top-3 text-slate-400 group-focus-within:text-brand transition-colors"
                   ></i>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:flex-shrink-0">
+                <div
+                  class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:flex-shrink-0"
+                >
                   <div class="relative w-full sm:w-auto">
                     <select
                       id="shopping-filter-category"
@@ -1376,10 +1385,10 @@
     <!-- Modals -->
     <div
       id="modal-form"
-      class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 sm:p-4 transition-opacity opacity-0"
+      class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center py-8 px-4 sm:p-4 transition-opacity opacity-0 overflow-y-auto"
     >
       <div
-        class="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-2xl transform scale-95 transition-all flex flex-col max-h-[95vh] sm:max-h-[90vh]"
+        class="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-2xl transform scale-95 transition-all flex flex-col shrink-0 w-full my-6 max-h-[calc(100vh-6rem)] sm:my-0 sm:max-h-[90vh]"
       >
         <div
           class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-xl sm:rounded-t-2xl"
@@ -1793,6 +1802,20 @@
         categoryChartInstance = null;
       let quickActionSelectedId = null;
 
+      // Itens que são adicionados/removidos de 250 em 250 und
+      const ITEMS_STEP_250 = [
+        "Parafuso Auto Brocante Cabeça Chata Philips 3,5 x 16mm",
+        "Parafuso Auto Brocante Cabeça Chata Philips 3,5 x 19mm",
+        "Parafuso Auto Brocante Cabeça Chata Philips 4,2 x 25mm",
+        "Parafuso Auto Brocante Cabeça Chata Philips 4,2 x 38mm",
+        "Parafuso Auto Brocante Cabeça Panela Philips 3,5 x 13mm",
+        "Parafuso Auto Brocante Cabeça Panela Philips 3,5 x 16mm",
+        "Parafuso Auto Brocante Cabeça Panela Philips 3,5 x 19 mm",
+      ];
+      function getStockStep(itemName) {
+        return ITEMS_STEP_250.includes(itemName) ? 250 : 1;
+      }
+
       // app metadata (displayed in sidebar footer)
       const APP_VERSION = "v1.0.0";
 
@@ -1958,16 +1981,17 @@
             const oldItem = inventory.find((i) => i.id === id);
             const oldQty = oldItem ? oldItem.qty : 0;
             const qtyChange = data.qty - oldQty;
-            
+
             await updateDoc(
               doc(db, "artifacts", appId, "public", "data", "inventory", id),
               data
             );
-            
+
             // Registrar edição com a diferença de quantidade
-            const details = qtyChange !== 0 
-              ? `De ${oldQty} para ${data.qty}` 
-              : "Sem alteração de quantidade";
+            const details =
+              qtyChange !== 0
+                ? `De ${oldQty} para ${data.qty}`
+                : "Sem alteração de quantidade";
             logAction(data.name, "Edição", qtyChange, details);
             showToast("Item atualizado!", "success");
           } else {
@@ -1988,13 +2012,15 @@
       async function updateStockDirect(id, change) {
         const item = inventory.find((i) => i.id === id);
         if (!item) return;
+        const step = getStockStep(item.name);
+        const actualChange = change > 0 ? step : -step;
         try {
-          const newQty = Math.max(0, item.qty + change);
+          const newQty = Math.max(0, item.qty + actualChange);
           await updateDoc(
             doc(db, "artifacts", appId, "public", "data", "inventory", id),
             { qty: newQty }
           );
-          logAction(item.name, change > 0 ? "Ajuste (+)" : "Retirada", change);
+          logAction(item.name, actualChange > 0 ? "Ajuste (+)" : "Retirada", actualChange);
           showToast(`Estoque: ${newQty}`, "success");
         } catch (e) {
           alert("Erro conexão");
@@ -2303,17 +2329,21 @@
         const grid = document.getElementById("shopping-grid");
         const empty = document.getElementById("empty-state-shopping");
         if (!grid || !empty) return;
-        
+
         grid.innerHTML = "";
 
         // Obter valores dos filtros e pesquisa ANTES de repopular dropdowns
         const searchTerm = (
           document.getElementById("shopping-search-input")?.value || ""
         ).toLowerCase();
-        const categorySelect = document.getElementById("shopping-filter-category");
-        const supplierSelect = document.getElementById("shopping-filter-supplier");
+        const categorySelect = document.getElementById(
+          "shopping-filter-category"
+        );
+        const supplierSelect = document.getElementById(
+          "shopping-filter-supplier"
+        );
         const statusSelect = document.getElementById("shopping-filter-status");
-        
+
         // Capturar valores ANTES de modificar os selects
         const filterCategory = categorySelect?.value || "";
         const filterSupplier = supplierSelect?.value || "";
@@ -2322,7 +2352,7 @@
         // Popular dropdowns de categoria e fornecedor (preservando valores selecionados)
         let finalCategory = filterCategory;
         let finalSupplier = filterSupplier;
-        
+
         if (categorySelect) {
           const uniqueCategories = [
             ...new Set(
@@ -2331,12 +2361,12 @@
                 .map((i) => i.category)
             ),
           ].sort();
-          
+
           // Verificar se a categoria selecionada ainda existe
           if (filterCategory && !uniqueCategories.includes(filterCategory)) {
             finalCategory = "";
           }
-          
+
           categorySelect.innerHTML =
             '<option value="">Todas as Categorias</option>' +
             uniqueCategories
@@ -2347,7 +2377,7 @@
                   }>${cat}</option>`
               )
               .join("");
-          
+
           // Garantir que o valor seja definido corretamente
           categorySelect.value = finalCategory;
         }
@@ -2360,12 +2390,12 @@
                 .map((i) => i.supplier)
             ),
           ].sort();
-          
+
           // Verificar se o fornecedor selecionado ainda existe
           if (filterSupplier && !uniqueSuppliers.includes(filterSupplier)) {
             finalSupplier = "";
           }
-          
+
           supplierSelect.innerHTML =
             '<option value="">Todos os Fornecedores</option>' +
             uniqueSuppliers
@@ -2376,7 +2406,7 @@
                   }>${sup}</option>`
               )
               .join("");
-          
+
           // Garantir que o valor seja definido corretamente
           supplierSelect.value = finalSupplier;
         }
@@ -2439,14 +2469,16 @@
             ? `onclick="openImageModal('${item.image}')"`
             : "";
           const cursorClass = hasImage ? "cursor-pointer" : "";
-          
+
           // Estilo visual para itens em trânsito
           const borderColor = isInTransit ? "bg-blue-500" : "bg-error";
           const transitBadge = isInTransit
             ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold uppercase"><i class="fas fa-truck"></i> Em Trânsito</span>'
             : "";
-          
-          grid.innerHTML += `<div class="shopping-item bg-white p-3 sm:p-5 rounded-xl shadow-card border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 hover:shadow-md transition relative overflow-hidden ${isInTransit ? "shopping-item-in-transit" : ""}">
+
+          grid.innerHTML += `<div class="shopping-item bg-white p-3 sm:p-5 rounded-xl shadow-card border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 hover:shadow-md transition relative overflow-hidden ${
+            isInTransit ? "shopping-item-in-transit" : ""
+          }">
                         <div class="absolute left-0 top-0 bottom-0 w-1 ${borderColor}"></div>
                         <div class="flex items-center gap-3 sm:gap-4">
                           <div ${imageClickListener} class="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center shrink-0 border border-slate-100 overflow-hidden ${cursorClass}">${img}</div>
@@ -2485,8 +2517,18 @@
                           <div class="flex items-center gap-2">
                             <button onclick="toggleInTransit('${
                               item.id
-                            }')" class="no-print ${isInTransit ? "bg-blue-500 hover:bg-blue-600 text-white" : "bg-slate-200 hover:bg-slate-300 text-slate-600"} px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl shadow-sm transition text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2" title="${isInTransit ? "Remover de trânsito" : "Marcar como em trânsito"}">
-                              <i class="fas fa-${isInTransit ? "check" : "truck"}"></i> <span class="hidden sm:inline">${isInTransit ? "Em Trânsito" : "Trânsito"}</span>
+                            }')" class="no-print ${
+            isInTransit
+              ? "bg-blue-500 hover:bg-blue-600 text-white"
+              : "bg-slate-200 hover:bg-slate-300 text-slate-600"
+          } px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl shadow-sm transition text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2" title="${
+            isInTransit ? "Remover de trânsito" : "Marcar como em trânsito"
+          }">
+                              <i class="fas fa-${
+                                isInTransit ? "check" : "truck"
+                              }"></i> <span class="hidden sm:inline">${
+            isInTransit ? "Em Trânsito" : "Trânsito"
+          }</span>
                             </button>
                             <button onclick="openReceiveModal('${
                               item.id
@@ -2903,7 +2945,9 @@
       // Função de impressão da lista de compras
       function printShoppingList() {
         // Atualizar subtítulo com data
-        const subtitle = document.querySelector("#view-shopping .print-subtitle");
+        const subtitle = document.querySelector(
+          "#view-shopping .print-subtitle"
+        );
         if (subtitle) {
           const now = new Date();
           subtitle.textContent = `Gerado em ${now.toLocaleDateString(
@@ -2917,9 +2961,11 @@
 
         // Obter todos os itens atualmente visíveis no grid (já filtrados)
         const grid = document.getElementById("shopping-grid");
-        const allItems = grid ? Array.from(grid.querySelectorAll(".shopping-item")) : [];
+        const allItems = grid
+          ? Array.from(grid.querySelectorAll(".shopping-item"))
+          : [];
         const itemsToHide = [];
-        
+
         // Ocultar itens em trânsito e garantir que apenas os visíveis sejam impressos
         allItems.forEach((item) => {
           // Ocultar itens em trânsito da impressão
