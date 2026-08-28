@@ -9,7 +9,6 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Configuração Visual -->
     <script>
@@ -159,24 +158,13 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        /* faster transform to avoid perceived lag while scrolling */
         transition: transform 0.22s ease;
       }
-      /* Help the browser reduce scroll jank on touch/desktop by keeping overscroll contained */
       #content-area {
         overscroll-behavior: contain;
       }
-      /* Hint for smoother scroll/painting on many items */
-      .inventory-card {
+      .inventory-card:hover {
         will-change: transform;
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
-        transform: translateZ(0);
-      }
-      .card-img {
-        will-change: transform;
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
       }
       .inventory-card:hover .card-img {
         transform: scale(1.08);
@@ -1007,7 +995,7 @@
                   <input
                     type="text"
                     id="dash-quick-search"
-                    onkeyup="dashQuickSearch(this.value)"
+                    onkeyup="onDashQuickSearchKeyup(event)"
                     onfocus="this.parentElement.querySelector('#dash-quick-results').classList.remove('hidden')"
                     aria-label="Buscar item"
                     aria-controls="dash-quick-results"
@@ -1097,7 +1085,7 @@
                 <input
                   type="text"
                   id="search-input"
-                  onkeyup="renderInventory()"
+                  onkeyup="onInventorySearchKeyup(event)"
                   placeholder="Buscar..."
                   class="w-full h-10 pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand focus:ring-4 focus:ring-brand/10 outline-none text-sm transition shadow-sm bg-white"
                 />
@@ -1186,7 +1174,7 @@
                   <input
                     type="text"
                     id="shopping-search-input"
-                    onkeyup="renderShopping()"
+                    onkeyup="onShoppingSearchKeyup(event)"
                     placeholder="Buscar..."
                     class="w-full h-10 pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand focus:ring-4 focus:ring-brand/10 outline-none text-sm transition shadow-sm bg-white"
                   />
@@ -1769,6 +1757,7 @@
         deleteDoc,
         query,
         orderBy,
+        limit,
       } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
       // CONFIGURAÇÃO DO FIREBASE
@@ -1793,14 +1782,67 @@
       const appId =
         typeof __app_id !== "undefined" ? __app_id : "door-design-matriz";
 
+      const HISTORY_LIMIT = 80;
+      const IMG_MAX_PX = 240;
+      const IMG_MAX_BYTES = 40 * 1024;
+      const SEARCH_DEBOUNCE_MS = 250;
+
       let inventory = [],
         categories = [],
         historyLog = [],
         activeTab = "Todas";
       let viewMode = localStorage.getItem("dd_view_mode") || "grid",
-        sortMode = "name_asc",
-        categoryChartInstance = null;
+        sortMode = "name_asc";
+      let currentView = "dashboard";
       let quickActionSelectedId = null;
+
+      function debounce(fn, ms) {
+        let t;
+        function wrapped(...args) {
+          clearTimeout(t);
+          t = setTimeout(() => fn.apply(this, args), ms);
+        }
+        wrapped.flush = function (...args) {
+          clearTimeout(t);
+          fn.apply(this, args);
+        };
+        wrapped.cancel = function () {
+          clearTimeout(t);
+        };
+        return wrapped;
+      }
+
+      function dataUrlBytes(dataUrl) {
+        const comma = dataUrl.indexOf(",");
+        if (comma < 0) return dataUrl.length;
+        return Math.ceil((dataUrl.length - comma - 1) * 0.75);
+      }
+
+      function compressImageToDataUrl(img) {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        let maxW = IMG_MAX_PX;
+        let q = 0.55;
+        let best = "";
+        let bestBytes = Infinity;
+        for (let i = 0; i < 5; i++) {
+          const scale = img.width > maxW ? maxW / img.width : 1;
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const d = canvas.toDataURL("image/jpeg", q);
+          const bytes = dataUrlBytes(d);
+          if (bytes < bestBytes) {
+            best = d;
+            bestBytes = bytes;
+          }
+          if (bytes <= IMG_MAX_BYTES) return d;
+          maxW = Math.max(120, Math.round(maxW * 0.75));
+          q = Math.max(0.4, q - 0.08);
+        }
+        return best;
+      }
 
       // Itens que são adicionados/removidos de 250 em 250 und
       const ITEMS_STEP_250 = [
@@ -1885,6 +1927,9 @@
             openImageModal,
             closeImageModal,
             dashQuickSearch,
+            onDashQuickSearchKeyup,
+            onInventorySearchKeyup,
+            onShoppingSearchKeyup,
             openQuickItem,
             printShoppingList,
             toggleInTransit,
@@ -1912,7 +1957,7 @@
           collection(db, "artifacts", appId, "public", "data", "inventory"),
           (snap) => {
             inventory = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-            renderGlobalUI();
+            renderActiveView();
             try {
               updateSidebarStatus(true, new Date());
             } catch (e) {}
@@ -1926,24 +1971,43 @@
               docs.length > 0
                 ? docs
                 : ["Geral", "Portas", "Fechaduras", "Ferragens"];
-            renderCategoryTabs();
-            renderCategoryTable();
-            updateGlobalCharts();
+            if (currentView === "inventory") renderCategoryTabs();
+            if (currentView === "settings") renderCategoryTable();
+            if (currentView === "dashboard") updateDashboard();
             try {
               updateSidebarStatus(true, new Date());
             } catch (e) {}
           }
         );
-        onSnapshot(
-          collection(db, "artifacts", appId, "public", "data", "history"),
-          (snap) => {
-            historyLog = snap.docs
-              .map((doc) => ({ id: doc.id, ...doc.data() }))
-              .sort((a, b) => new Date(b.date) - new Date(a.date));
+        const historyCol = collection(
+          db,
+          "artifacts",
+          appId,
+          "public",
+          "data",
+          "history"
+        );
+        const applyHistory = (snap) => {
+          historyLog = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          historyLog.sort((a, b) => new Date(b.date) - new Date(a.date));
+          if (historyLog.length > HISTORY_LIMIT)
+            historyLog = historyLog.slice(0, HISTORY_LIMIT);
+          if (currentView === "history" || currentView === "dashboard")
             renderHistory();
-            try {
-              updateSidebarStatus(true, new Date());
-            } catch (e) {}
+          if (currentView === "dashboard") updateDashboard();
+          try {
+            updateSidebarStatus(true, new Date());
+          } catch (e) {}
+        };
+        onSnapshot(
+          query(historyCol, orderBy("date", "desc"), limit(HISTORY_LIMIT)),
+          applyHistory,
+          (err) => {
+            console.warn(
+              "Histórico: query com orderBy falhou, usando fallback",
+              err
+            );
+            onSnapshot(historyCol, applyHistory);
           }
         );
       }
@@ -2015,15 +2079,29 @@
         if (!item) return;
         const step = getStockStep(item.name);
         const actualChange = change > 0 ? step : -step;
+        const prev = item.qty;
+        const newQty = Math.max(0, item.qty + actualChange);
+        item.qty = newQty;
+        if (
+          currentView === "inventory" ||
+          currentView === "shopping" ||
+          currentView === "dashboard"
+        )
+          renderActiveView();
         try {
-          const newQty = Math.max(0, item.qty + actualChange);
           await updateDoc(
             doc(db, "artifacts", appId, "public", "data", "inventory", id),
             { qty: newQty }
           );
-          logAction(item.name, actualChange > 0 ? "Ajuste (+)" : "Retirada", actualChange);
+          logAction(
+            item.name,
+            actualChange > 0 ? "Ajuste (+)" : "Retirada",
+            actualChange
+          );
           showToast(`Estoque: ${newQty}`, "success");
         } catch (e) {
+          item.qty = prev;
+          renderActiveView();
           alert("Erro conexão");
         }
       }
@@ -2101,11 +2179,35 @@
         );
       }
 
+      function updateBadge() {
+        const el = document.getElementById("badge-count");
+        if (!el) return;
+        const c = inventory.filter((i) => i.qty < i.min).length;
+        el.innerText = c;
+        if (c > 0) el.classList.remove("hidden", "scale-0");
+        else el.classList.add("hidden", "scale-0");
+        el.classList.add("scale-100");
+      }
+
+      function renderActiveView() {
+        if (currentView === "inventory") {
+          renderCategoryTabs();
+          renderInventory();
+        } else if (currentView === "shopping") {
+          renderShopping();
+        } else if (currentView === "history") {
+          renderHistory();
+        } else if (currentView === "dashboard") {
+          renderHistory();
+          updateDashboard();
+        } else if (currentView === "settings") {
+          renderCategoryTable();
+        }
+        updateBadge();
+      }
+
       function renderGlobalUI() {
-        renderInventory();
-        renderShopping();
-        renderHistory();
-        updateDashboard();
+        renderActiveView();
       }
 
       function renderInventory() {
@@ -2459,7 +2561,8 @@
         empty.classList.add("hidden");
         grid.classList.remove("hidden");
 
-        toBuy.forEach((item) => {
+        grid.innerHTML = toBuy
+          .map((item) => {
           const sug = Math.ceil(item.min * 1.5) - item.qty;
           const hasImage = !!item.image;
           const isInTransit = item.inTransit || false;
@@ -2477,7 +2580,7 @@
             ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold uppercase"><i class="fas fa-truck"></i> Em Trânsito</span>'
             : "";
 
-          grid.innerHTML += `<div class="shopping-item bg-white p-3 sm:p-5 rounded-xl shadow-card border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 hover:shadow-md transition relative overflow-hidden ${
+          return `<div class="shopping-item bg-white p-3 sm:p-5 rounded-xl shadow-card border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 hover:shadow-md transition relative overflow-hidden ${
             isInTransit ? "shopping-item-in-transit" : ""
           }">
                         <div class="absolute left-0 top-0 bottom-0 w-1 ${borderColor}"></div>
@@ -2539,7 +2642,8 @@
                           </div>
                         </div>
                       </div>`;
-        });
+          })
+          .join("");
       }
 
       function renderHistory(filter = "all") {
@@ -2740,8 +2844,6 @@
                   .join("");
         }
 
-        updateGlobalCharts();
-
         // Entradas / Saídas do dia (soma de alterações no histórico para hoje)
         try {
           const today = new Date();
@@ -2765,43 +2867,6 @@
           if (entEl) entEl.innerText = entriesToday;
           if (exitEl) exitEl.innerText = exitsToday;
         } catch (e) {}
-      }
-
-      function updateGlobalCharts() {
-        const ctx = document.getElementById("categoryChart");
-        if (!ctx) return;
-        const counts = {};
-        inventory.forEach(
-          (i) => (counts[i.category] = (counts[i.category] || 0) + 1)
-        );
-        if (categoryChartInstance) categoryChartInstance.destroy();
-        categoryChartInstance = new Chart(ctx, {
-          type: "doughnut",
-          data: {
-            labels: Object.keys(counts),
-            datasets: [
-              {
-                data: Object.values(counts),
-                backgroundColor: [
-                  "#3b82f6",
-                  "#10b981",
-                  "#f59e0b",
-                  "#ef4444",
-                  "#8b5cf6",
-                ],
-                borderWidth: 0,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: "70%",
-            plugins: {
-              legend: { position: "right", labels: { boxWidth: 10 } },
-            },
-          },
-        });
       }
 
       function dashQuickSearch(val) {
@@ -3232,26 +3297,25 @@
           const img = new Image();
           img.src = e.target.result;
           img.onload = function () {
-            // resize image client-side for consistent sizes (max width)
-            const c = document.createElement("canvas"),
-              MAX = 1000;
-            const scale = img.width > MAX ? MAX / img.width : 1;
-            c.width = img.width * scale;
-            c.height = img.height * scale;
-            const ctx = c.getContext("2d");
-            ctx.drawImage(img, 0, 0, c.width, c.height);
-            const d = c.toDataURL("image/jpeg", 0.8);
+            const d = compressImageToDataUrl(img);
+            const bytes = dataUrlBytes(d);
+            if (bytes > IMG_MAX_BYTES * 2) {
+              if (processing) processing.classList.add("hidden");
+              return showToast(
+                "Não foi possível compactar a imagem o suficiente",
+                "default"
+              );
+            }
+            if (bytes > IMG_MAX_BYTES)
+              showToast("Imagem compactada ao máximo", "default");
 
-            // set hidden field and preview
             document.getElementById("imgBase64").value = d;
             preview.src = d;
             preview.classList.remove("hidden");
             preview.setAttribute("alt", file.name);
             if (placeholder) placeholder.classList.add("hidden");
             if (info)
-              info.innerText = `${file.name} — ${Math.round(
-                file.size / 1024
-              )} KB`;
+              info.innerText = `${file.name} — ${Math.round(bytes / 1024)} KB`;
             if (info) info.classList.remove("hidden");
             if (removeBtn) removeBtn.classList.remove("hidden");
             if (processing) processing.classList.add("hidden");
@@ -3281,6 +3345,7 @@
       }
 
       function switchView(v) {
+        currentView = v;
         document
           .querySelectorAll(".view-section")
           .forEach((e) => e.classList.add("hidden"));
@@ -3290,7 +3355,6 @@
           .forEach((e) => e.classList.remove("active"));
         document.getElementById(`nav-${v}`).classList.add("active");
 
-        // Fechar sidebar mobile ao trocar de view
         if (window.innerWidth < 768) {
           const sidebar = document.getElementById("main-sidebar");
           const overlay = document.getElementById("sidebar-overlay");
@@ -3298,14 +3362,7 @@
           overlay.classList.remove("active");
         }
 
-        if (v === "inventory") {
-          renderCategoryTabs();
-          renderInventory();
-        }
-        if (v === "settings") renderCategoryTable();
-        if (v === "shopping") renderShopping();
-        if (v === "history") renderHistory();
-        updateGlobalUI();
+        renderActiveView();
       }
 
       // Floating back-to-top button setup
@@ -3379,22 +3436,45 @@
         });
       }
       function updateGlobalUI() {
-        const c = inventory.filter((i) => i.qty < i.min).length;
-        document.getElementById("badge-count").innerText = c;
-        c > 0
-          ? document
-              .getElementById("badge-count")
-              .classList.remove("hidden", "scale-0")
-          : document
-              .getElementById("badge-count")
-              .classList.add("hidden", "scale-0");
-        document.getElementById("badge-count").classList.add("scale-100");
-        if (
-          !document
-            .getElementById("view-dashboard")
-            .classList.contains("hidden")
-        )
-          updateDashboard();
+        updateBadge();
+      }
+
+      const debouncedRenderInventory = debounce(
+        renderInventory,
+        SEARCH_DEBOUNCE_MS
+      );
+      const debouncedRenderShopping = debounce(
+        renderShopping,
+        SEARCH_DEBOUNCE_MS
+      );
+      const debouncedDashQuickSearch = debounce(
+        dashQuickSearch,
+        SEARCH_DEBOUNCE_MS
+      );
+
+      function onInventorySearchKeyup(e) {
+        if (e.key === "Enter") {
+          debouncedRenderInventory.flush();
+          return;
+        }
+        debouncedRenderInventory();
+      }
+
+      function onShoppingSearchKeyup(e) {
+        if (e.key === "Enter") {
+          debouncedRenderShopping.flush();
+          return;
+        }
+        debouncedRenderShopping();
+      }
+
+      function onDashQuickSearchKeyup(e) {
+        const val = e.target.value;
+        if (!val.trim() || e.key === "Enter" || e.key === "Escape") {
+          debouncedDashQuickSearch.flush(val);
+          return;
+        }
+        debouncedDashQuickSearch(val);
       }
 
       initApp();
